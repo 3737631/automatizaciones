@@ -29,17 +29,16 @@ mongoose.connect(MONGO_URI).then(() => {
     const store = new MongoStore({ mongoose: mongoose });
     
     const client = new Client({
-        authTimeoutMs: 0,
-        qrMaxRetries: 5,
-        webVersionCache: { type: 'remote', remotePath: 'https://github.com/wppconnect-team/wa-version/releases/tag/latest' },
         authStrategy: new RemoteAuth({
             store: store,
             backupSyncIntervalMs: 86400000,
             dataPath: '/tmp'
         }),
+        authTimeoutMs: 0,
+        qrMaxRetries: 5,
         puppeteer: {
             headless: true,
-            executablePath: process.env.RENDER 
+            executablePath: process.env.RENDER
                 ? path.join(__dirname, '.local-chromium', 'chrome', 'linux-146.0.7680.31', 'chrome-linux64', 'chrome')
                 : 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
             args: [
