@@ -1,5 +1,6 @@
 const { Client, LocalAuth } = require('whatsapp-web.js');
 const qrcode = require('qrcode');
+const express = require('express');
 const fs = require('fs');
 const path = require('path');
 
@@ -197,6 +198,21 @@ client.on('message', async msg => {
 });
 
 client.initialize();
+
+const app = express();
+const port = process.env.PORT || 10000;
+
+app.get('/qr.png', (req, res) => {
+    res.sendFile(path.join(__dirname, 'qr.png'));
+});
+
+app.get('/', (req, res) => {
+    res.send('Bot de WhatsApp funcionando correctamente.');
+});
+
+app.listen(port, '0.0.0.0', () => {
+    console.log(`Servidor web activo en el puerto ${port}`);
+});
 
 /*
 ╔══════════════════════════════════════════════════════════════════════╗
