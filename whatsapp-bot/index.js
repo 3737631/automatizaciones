@@ -41,16 +41,20 @@ mongoose.connect(MONGO_URI).then(() => {
         }
     });
 
-    client.on('qr', async (qr) => {
-        console.log('[Bot] Ignorando QR, generando código de emparejamiento...');
-        try {
-            const code = await client.requestPairingCode(NUMERO_TELEFONO);
-            console.log(`=========================================`);
-            console.log(`TU CÓDIGO DE VINCULACIÓN ES: ${code}`);
-            console.log(`=========================================`);
-        } catch (err) {
-            console.error('Error al generar el código:', err);
-        }
+    client.on('qr', (qr) => {
+        console.log('[Bot] QR recibido. Esperando 5 segundos para generar el código de emparejamiento...');
+        
+        setTimeout(async () => {
+            try {
+                console.log('[Bot] Solicitando código de emparejamiento para:', NUMERO_TELEFONO);
+                const code = await client.requestPairingCode(NUMERO_TELEFONO);
+                console.log(`=========================================`);
+                console.log(`TU CÓDIGO DE VINCULACIÓN ES: ${code}`);
+                console.log(`=========================================`);
+            } catch (err) {
+                console.error('Error al generar el código:', err);
+            }
+        }, 5000);
     });
 
     client.on('ready', () => {
