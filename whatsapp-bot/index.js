@@ -7,19 +7,10 @@ const mongoose = require('mongoose');
 // URL de conexión a MongoDB Atlas con la contraseña integrada
 const MONGO_URI = 'mongodb+srv://fortpay107_db_user:wwYB2KftrSEWSt3p@cluster0.epaz27j.mongodb.net/?appName=Cluster0';
 
+const NUMERO_TELEFONO = '34XXXXXXXXX';
+
 const app = express();
 const port = process.env.PORT || 10000;
-let ultimoQr = null;
-
-app.get('/qr.png', (req, res) => {
-    if (ultimoQr) {
-        res.sendFile(path.join(__dirname, 'qr.png'), (err) => {
-            if (err) res.status(404).send('Generando imagen QR, por favor refresca...');
-        });
-    } else {
-        res.status(404).send('El bot se está iniciando o ya está conectado. Refresca en unos segundos...');
-    }
-});
 
 app.get('/', (req, res) => { res.send('Servidor del Bot de WhatsApp Activo.'); });
 app.listen(port, '0.0.0.0', () => { console.log(`[Express] Servidor activo en el puerto ${port}`); });
@@ -50,18 +41,20 @@ mongoose.connect(MONGO_URI).then(() => {
         }
     });
 
-    client.on('qr', (qr) => {
-        console.log('[Bot] Nuevo código QR generado.');
-        ultimoQr = qr;
-        const qrcode = require('qrcode');
-        qrcode.toFile(path.join(__dirname, 'qr.png'), qr, (err) => {
-            if (err) console.error('[Express] Error al guardar imagen QR:', err);
-        });
+    client.on('qr', async (qr) => {
+        console.log('[Bot] Ignorando QR, generando código de emparejamiento...');
+        try {
+            const code = await client.requestPairingCode(NUMERO_TELEFONO);
+            console.log(`=========================================`);
+            console.log(`TU CÓDIGO DE VINCULACIÓN ES: ${code}`);
+            console.log(`=========================================`);
+        } catch (err) {
+            console.error('Error al generar el código:', err);
+        }
     });
 
     client.on('ready', () => {
         console.log('[Bot] ¡Conectado con éxito!');
-        ultimoQr = null;
     });
 
     client.on('remote_session_saved', () => {
