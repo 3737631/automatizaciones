@@ -6,6 +6,9 @@ const path = require('path');
 const client = new Client({
     authStrategy: new LocalAuth(),
     puppeteer: {
+        executablePath: process.env.RENDER
+            ? './local-chromium/chrome/linux-146.0.7680.31/chrome-linux64/chrome'
+            : 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
         args: ['--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage']
     }
 });
