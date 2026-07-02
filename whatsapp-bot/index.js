@@ -31,7 +31,9 @@ mongoose.connect(MONGO_URI).then(() => {
     const client = new Client({
         authStrategy: new RemoteAuth({
             store: store,
-            backupSyncIntervalMs: 60000
+            backupSyncIntervalMs: 60000,
+            path: path.join(__dirname, '.wwebjs_auth'),
+            clientId: 'restaurant-bot'
         }),
         puppeteer: {
             executablePath: process.env.RENDER 
