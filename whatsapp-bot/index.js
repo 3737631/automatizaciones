@@ -70,9 +70,34 @@ mongoose.connect(MONGO_URI).then(() => {
         console.log('[Mongo] ¡Sesión guardada en la base de datos remota con éxito!');
     });
 
+    const sessions = {};
+
     client.on('message', async (msg) => {
-        if (msg.body.toLowerCase() === 'hola') {
-            await msg.reply('¡Hola! Soy el bot del restaurante. ¿En qué puedo ayudarte?');
+        try {
+            if (msg.from === 'status@broadcast') return;
+            const userId = msg.from;
+            const text = msg.body.trim().toLowerCase();
+
+            if (!sessions[userId] || text === 'hola') {
+                sessions[userId] = { step: 'ESPERANDO_NOMBRE' };
+                await msg.reply('¡Hola! Bienvenido al sistema de reservas del restaurante. Por favor, dime tu nombre para empezar.');
+                return;
+            }
+
+            if (sessions[userId].step === 'ESPERANDO_NOMBRE') {
+                sessions[userId].nombre = msg.body.trim();
+                sessions[userId].step = 'ESPERANDO_DETALLES';
+                await msg.reply(`¡Perfecto, ${sessions[userId].nombre}! ¿Para qué día, hora y cuántas personas te gustaría la reserva?`);
+                return;
+            }
+
+            if (sessions[userId].step === 'ESPERANDO_DETALLES') {
+                delete sessions[userId];
+                await msg.reply('¡Muchas gracias! Tu petición ha sido registrada. En breves momentos te confirmaremos la disponibilidad. ¡Te esperamos!');
+                return;
+            }
+        } catch (err) {
+            console.error('[Bot] Error en mensaje:', err);
         }
     });
 
