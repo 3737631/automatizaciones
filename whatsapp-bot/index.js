@@ -29,9 +29,12 @@ mongoose.connect(MONGO_URI).then(() => {
     const store = new MongoStore({ mongoose: mongoose });
     
     const client = new Client({
+        authTimeoutMs: 0,
+        qrMaxRetries: 5,
+        webVersionCache: { type: 'remote', remotePath: 'https://github.com/wppconnect-team/wa-version/releases/tag/latest' },
         authStrategy: new RemoteAuth({
             store: store,
-            backupSyncIntervalMs: 600000,
+            backupSyncIntervalMs: 86400000,
             dataPath: '/tmp'
         }),
         puppeteer: {
