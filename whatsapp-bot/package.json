@@ -1,0 +1,13 @@
+{
+  "name": "whatsapp-restaurant-bot",
+  "version": "1.0.0",
+  "description": "Bot de WhatsApp para gestionar reservas de restaurante",
+  "main": "index.js",
+  "scripts": {
+    "start": "node index.js"
+  },
+  "dependencies": {
+    "qrcode": "^1.5.4",
+    "whatsapp-web.js": "^1.26.0"
+  }
+}
