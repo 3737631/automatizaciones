@@ -7,7 +7,7 @@ const mongoose = require('mongoose');
 // URL de conexión a MongoDB Atlas con la contraseña integrada
 const MONGO_URI = 'mongodb+srv://fortpay107_db_user:wwYB2KftrSEWSt3p@cluster0.epaz27j.mongodb.net/?appName=Cluster0';
 
-const NUMERO_TELEFONO = '34XXXXXXXXX';
+const NUMERO_TELEFONO = '34627564804';
 
 const app = express();
 const port = process.env.PORT || 10000;
