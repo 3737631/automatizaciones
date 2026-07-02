@@ -78,7 +78,16 @@ mongoose.connect(MONGO_URI).then(() => {
             const userId = msg.from;
             const text = msg.body.trim().toLowerCase();
 
-            if (!sessions[userId] || text === 'hola') {
+            const palabrasClave = ['hola', 'buenas', 'buenos dias', 'buenas tardes', 'reservar', 'reserva', 'mesa'];
+
+            if (!sessions[userId]) {
+                sessions[userId] = { step: 'ESPERANDO_NOMBRE' };
+                await msg.reply('¡Hola! Bienvenido al sistema de reservas del restaurante. Por favor, dime tu nombre para empezar.');
+                return;
+            }
+
+            if (palabrasClave.some(p => text.includes(p))) {
+                delete sessions[userId];
                 sessions[userId] = { step: 'ESPERANDO_NOMBRE' };
                 await msg.reply('¡Hola! Bienvenido al sistema de reservas del restaurante. Por favor, dime tu nombre para empezar.');
                 return;
