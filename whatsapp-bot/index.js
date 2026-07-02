@@ -36,6 +36,7 @@ mongoose.connect(MONGO_URI).then(() => {
             clientId: 'restaurant-bot'
         }),
         puppeteer: {
+            headless: true,
             executablePath: process.env.RENDER 
                 ? path.join(__dirname, '.local-chromium', 'chrome', 'linux-146.0.7680.31', 'chrome-linux64', 'chrome')
                 : 'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
