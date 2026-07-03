@@ -1,0 +1,39 @@
+import { clsx, type ClassValue } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+import { nanoid } from 'nanoid';
+import { createHash } from 'crypto';
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
+
+export function formatDate(isoString: string): string {
+  const date = new Date(isoString);
+  return date.toLocaleDateString('es-ES', {
+    day: 'numeric',
+    month: 'long',
+    year: 'numeric',
+  });
+}
+
+export function generateSessionToken(): string {
+  return nanoid(32);
+}
+
+export function generateUniqueHash(offer: {
+  title: string;
+  company: string;
+  description?: string | null;
+}): string {
+  const raw = `${offer.title}|${offer.company}|${offer.description ?? ''}`;
+  return createHash('sha256').update(raw).digest('hex').slice(0, 16);
+}
+
+export function sleep(ms: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+export function truncate(text: string, maxLength: number): string {
+  if (text.length <= maxLength) return text;
+  return text.slice(0, maxLength - 3) + '...';
+}
