@@ -1,5 +1,8 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: { serverComponentsExternalPackages: ['pdf-parse'] }
+  output: 'export',
+  basePath: '/automatizaciones',
+  trailingSlash: true,
+  images: { unoptimized: true },
 };
 module.exports = nextConfig;

@@ -1,0 +1,47 @@
+name: Deploy AutoCandidatura AI to GitHub Pages
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'autocandidatura-ai/**'
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ./autocandidatura-ai
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: autocandidatura-ai/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build
+        run: npm run build
+
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: ./autocandidatura-ai/out
+
+      - name: Deploy to GitHub Pages
+        uses: actions/deploy-pages@v4
