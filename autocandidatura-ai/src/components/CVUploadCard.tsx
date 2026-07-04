@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback } from 'react';
 import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { uploadCVFromClient } from '@/lib/cv/client-upload';
 import type { CVAnalysisResult } from '@/types';
 
 interface CVUploadCardProps {
@@ -28,11 +29,11 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
   const handleFile = useCallback((f: File) => {
     setError('');
     if (f.type !== 'application/pdf') {
-      setError('Solo se aceptan archivos PDF');
+      setError('Solo se aceptan archivos PDF.');
       return;
     }
     if (f.size > 10 * 1024 * 1024) {
-      setError('El archivo no puede superar los 10 MB');
+      setError('El archivo no puede superar los 10 MB.');
       return;
     }
     setFile(f);
@@ -53,30 +54,58 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
     setProgress(0);
 
     const interval = setInterval(() => {
-      setProgress((p) => Math.min(p + 15, 85));
-    }, 300);
+      setProgress((p) => Math.min(p + 10, 80));
+    }, 400);
 
     try {
+      const sessionToken = localStorage.getItem('autocandidatura_session_token');
       const formData = new FormData();
       formData.append('file', file);
 
-      const res = await fetch('/api/analyze-cv', {
+      let analysis: CVAnalysisResult | null = null;
+
+      const res = await fetch('/api/cv/upload', {
         method: 'POST',
+        headers: sessionToken ? { 'x-session-token': sessionToken } : {},
         body: formData,
       });
 
-      if (!res.ok) {
-        throw new Error(await res.text() || 'Error al analizar el CV');
+      if (res.ok) {
+        const json = await res.json();
+        if (json.success && json.data) {
+          analysis = json.data;
+        }
       }
 
-      const data: CVAnalysisResult = await res.json();
+      // If not ok, it could be 405 (static export) or network error
+      if (!analysis) {
+        if (sessionToken) {
+          const clientResult = await uploadCVFromClient(file, sessionToken);
+          if (!clientResult.success) {
+            throw new Error(clientResult.error || 'Error al subir el CV.');
+          }
+        } else {
+          throw new Error('Sesión no encontrada. Vuelve a conectar tu correo.');
+        }
+      }
+
       clearInterval(interval);
       setProgress(100);
-      setResult(data);
-      onUploadComplete?.(data);
+
+      const finalResult: CVAnalysisResult = analysis || {
+        summary: 'CV subido correctamente. El análisis se completará cuando actives el agente.',
+        detected_skills: [],
+        detected_experience: '',
+        compatible_roles: [],
+        compatible_sectors: [],
+        recommendations: [],
+      };
+
+      setResult(finalResult);
+      onUploadComplete?.(finalResult);
     } catch (err) {
       clearInterval(interval);
-      setError(err instanceof Error ? err.message : 'Error al subir el archivo');
+      setError(err instanceof Error ? err.message : 'Error al subir el archivo.');
     } finally {
       setUploading(false);
     }
@@ -93,37 +122,43 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
       <div className="bg-white rounded-xl border border-green-200 shadow-sm p-6">
         <div className="flex items-center gap-2 mb-4">
           <CheckCircle className="w-5 h-5 text-green-500" />
-          <h3 className="text-lg font-semibold text-gray-900">CV analizado</h3>
+          <h3 className="text-lg font-semibold text-gray-900">CV subido correctamente</h3>
         </div>
         <div className="space-y-3 text-sm">
           <div>
             <p className="text-gray-500 mb-1">Resumen</p>
-            <p className="text-gray-800">{result.summary}</p>
+            <p className="text-gray-800">{result.summary || 'Pendiente de análisis por el agente.'}</p>
           </div>
-          <div>
-            <p className="text-gray-500 mb-1">Habilidades detectadas</p>
-            <div className="flex flex-wrap gap-1.5">
-              {result.detected_skills.map((skill) => (
-                <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                  {skill}
-                </span>
-              ))}
+          {result.detected_skills.length > 0 && (
+            <div>
+              <p className="text-gray-500 mb-1">Habilidades detectadas</p>
+              <div className="flex flex-wrap gap-1.5">
+                {result.detected_skills.map((skill) => (
+                  <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
+                    {skill}
+                  </span>
+                ))}
+              </div>
             </div>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Experiencia</p>
-            <p className="text-gray-800">{result.detected_experience}</p>
-          </div>
-          <div>
-            <p className="text-gray-500 mb-1">Roles compatibles</p>
-            <div className="flex flex-wrap gap-1.5">
-              {result.compatible_roles.map((role) => (
-                <span key={role} className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                  {role}
-                </span>
-              ))}
+          )}
+          {result.detected_experience && (
+            <div>
+              <p className="text-gray-500 mb-1">Experiencia</p>
+              <p className="text-gray-800">{result.detected_experience}</p>
             </div>
-          </div>
+          )}
+          {result.compatible_roles.length > 0 && (
+            <div>
+              <p className="text-gray-500 mb-1">Roles compatibles</p>
+              <div className="flex flex-wrap gap-1.5">
+                {result.compatible_roles.map((role) => (
+                  <span key={role} className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-medium">
+                    {role}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <button onClick={reset} className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline">
           Subir otro CV
@@ -149,7 +184,7 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         <input
           ref={inputRef}
           type="file"
-          accept=".pdf"
+          accept="application/pdf"
           className="hidden"
           onChange={(e) => {
             const f = e.target.files?.[0];
@@ -184,7 +219,7 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
               style={{ width: `${progress}%` }}
             />
           </div>
-          <p className="text-xs text-gray-500 mt-1 text-center">Analizando CV...</p>
+          <p className="text-xs text-gray-500 mt-1 text-center">Subiendo CV...</p>
         </div>
       )}
 
@@ -208,10 +243,10 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         {uploading ? (
           <>
             <Loader2 className="w-4 h-4 animate-spin" />
-            Analizando...
+            Subiendo...
           </>
         ) : (
-          'Analizar CV'
+          'Subir CV'
         )}
       </button>
     </div>
