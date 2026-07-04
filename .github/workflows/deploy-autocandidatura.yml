@@ -1,4 +1,4 @@
-name: Deploy AutoCandidatura AI to Vercel
+name: Deploy AutoCandidatura AI to GitHub Pages
 
 on:
   push:
@@ -6,8 +6,17 @@ on:
     paths:
       - 'autocandidatura-ai/**'
 
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
 jobs:
-  deploy:
+  build-and-deploy:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout
@@ -24,11 +33,11 @@ jobs:
       - name: Build
         run: cd autocandidatura-ai && npm run build
 
-      - name: Deploy to Vercel
-        uses: amondnet/vercel-action@v25
+      - name: Upload artifact
+        uses: actions/upload-pages-artifact@v3
         with:
-          vercel-token: ${{ secrets.VERCEL_TOKEN }}
-          vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-          vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-          vercel-args: '--prod'
-          working-directory: ./autocandidatura-ai
+          path: ./autocandidatura-ai/out
+
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

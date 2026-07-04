@@ -63,42 +63,15 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         throw new Error('Sesión no encontrada. Vuelve a conectar tu correo.');
       }
 
-      let analysis: CVAnalysisResult | null = null;
-
-      // Try API route first (works on Vercel)
-      try {
-        const formData = new FormData();
-        formData.append('file', file);
-
-        const res = await fetch('/api/cv/upload', {
-          method: 'POST',
-          headers: { 'x-session-token': sessionToken },
-          body: formData,
-        });
-
-        const json = await res.json();
-        if (res.ok && json.success && json.data) {
-          analysis = json.data;
-        } else if (!res.ok) {
-          // If API fails (405, 404, etc.), fall through to client upload
-          console.warn('API upload failed, falling back to client upload:', json.error);
-        }
-      } catch {
-        // Network error, fall through to client upload
-      }
-
-      // Fallback: upload directly from client to Supabase
-      if (!analysis) {
-        const clientResult = await uploadCVFromClient(file, sessionToken);
-        if (!clientResult.success) {
-          throw new Error(clientResult.error || 'Error al subir el CV.');
-        }
+      const clientResult = await uploadCVFromClient(file, sessionToken);
+      if (!clientResult.success) {
+        throw new Error(clientResult.error || 'Error al subir el CV.');
       }
 
       clearInterval(interval);
       setProgress(100);
 
-      const finalResult: CVAnalysisResult = analysis || {
+      const finalResult: CVAnalysisResult = {
         summary: 'CV subido correctamente. El análisis se completará cuando actives el agente.',
         detected_skills: [],
         detected_experience: '',
@@ -135,36 +108,6 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
             <p className="text-gray-500 mb-1">Resumen</p>
             <p className="text-gray-800">{result.summary || 'Pendiente de análisis por el agente.'}</p>
           </div>
-          {result.detected_skills.length > 0 && (
-            <div>
-              <p className="text-gray-500 mb-1">Habilidades detectadas</p>
-              <div className="flex flex-wrap gap-1.5">
-                {result.detected_skills.map((skill) => (
-                  <span key={skill} className="px-2 py-0.5 bg-blue-50 text-blue-700 rounded-full text-xs font-medium">
-                    {skill}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {result.detected_experience && (
-            <div>
-              <p className="text-gray-500 mb-1">Experiencia</p>
-              <p className="text-gray-800">{result.detected_experience}</p>
-            </div>
-          )}
-          {result.compatible_roles.length > 0 && (
-            <div>
-              <p className="text-gray-500 mb-1">Roles compatibles</p>
-              <div className="flex flex-wrap gap-1.5">
-                {result.compatible_roles.map((role) => (
-                  <span key={role} className="px-2 py-0.5 bg-green-50 text-green-700 rounded-full text-xs font-medium">
-                    {role}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
         </div>
         <button onClick={reset} className="mt-4 text-xs text-gray-400 hover:text-gray-600 underline">
           Subir otro CV
