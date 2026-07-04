@@ -335,7 +335,7 @@ export async function startAgent(
       finished_at: new Date().toISOString(),
       total_offers_found: 0,
       total_applications_sent: 0,
-      total_errors,
+      total_errors: totalErrors,
     }).eq('id', runId);
     await logAction(supabase, session.id, 'agent_completed', 'No se encontraron ofertas');
     return;
@@ -366,7 +366,7 @@ export async function startAgent(
           validOffers.push(offer);
         } else {
           await logAction(supabase, session.id, 'offer_rejected',
-            `Oferta "${offer.title}" rechazada: ${result.reason}`, null, null);
+            `Oferta "${offer.title}" rechazada: ${result.reason}`);
         }
       }
 
@@ -385,7 +385,7 @@ export async function startAgent(
       finished_at: new Date().toISOString(),
       total_offers_found: totalOffersFound,
       total_applications_sent: 0,
-      total_errors,
+      total_errors: totalErrors,
     }).eq('id', runId);
     await logAction(supabase, session.id, 'agent_completed', 'No hay ofertas válidas para candidatura');
     return;
@@ -421,7 +421,7 @@ export async function startAgent(
   // Respect daily limit
   const dailyOffers = compatibleOffers.slice(0, criteria.daily_limit);
 
-  // Phase 6: Generate messages (only for offers with valid applicationEmail)
+  // Phase 6: Generate messages (only for offers with valid application_email)
   const step6 = stepRecords[5];
   const messagesGenerated: Array<{
     offer: Partial<JobOffer>;
@@ -436,8 +436,8 @@ export async function startAgent(
       await updateStep(supabase, step6.id, 'processing');
       for (const item of dailyOffers) {
         const hasEmail =
-          item.offer.applicationEmail &&
-          item.offer.applicationEmail.trim().length > 0;
+          item.offer.application_email &&
+          item.offer.application_email.trim().length > 0;
 
         if (!hasEmail) {
           await logAction(supabase, session.id, 'message_skipped',
@@ -461,8 +461,8 @@ export async function startAgent(
             work_mode: item.offer.work_mode || null,
             source: item.offer.source || null,
             source_url: item.offer.source_url || null,
-            application_email: item.offer.applicationEmail || null,
-            application_url: item.offer.applicationUrl || null,
+            application_email: item.offer.application_email || null,
+            application_url: item.offer.application_url || null,
             description: item.offer.description || null,
             requirements: item.offer.requirements || null,
             published_at: item.offer.published_at || null,
@@ -520,7 +520,7 @@ export async function startAgent(
 
         try {
           const emailSent = await sendEmail({
-            to: item.offer.applicationEmail!,
+            to: item.offer.application_email!,
             subject: item.subject,
             message: item.message,
             accessToken: session.gmail_access_token_encrypted || undefined,
@@ -545,9 +545,9 @@ export async function startAgent(
               country: item.offer.country || null,
               work_mode: item.offer.work_mode || null,
               source: item.offer.source || 'mock',
-              source_url: item.offer.applicationUrl || null,
-              application_email: item.offer.applicationEmail || null,
-              application_url: item.offer.applicationUrl || null,
+              source_url: item.offer.application_url || null,
+              application_email: item.offer.application_email || null,
+              application_url: item.offer.application_url || null,
               description: item.offer.description || null,
               requirements: item.offer.requirements || null,
               published_at: item.offer.published_at || null,
@@ -565,7 +565,7 @@ export async function startAgent(
               session_id: session.id,
               job_offer_id: savedOffer.id,
               company: item.offer.company || '',
-              application_email: item.offer.applicationEmail || '',
+              application_email: item.offer.application_email || '',
               subject: item.subject,
               message: item.message,
               cv_url: cvUrl,
@@ -614,7 +614,7 @@ export async function startAgent(
           finished_at: new Date().toISOString(),
           total_offers_found: totalOffersFound,
           total_applications_sent: totalApplicationsSent,
-          total_errors,
+          total_errors: totalErrors,
         })
         .eq('id', runId);
 

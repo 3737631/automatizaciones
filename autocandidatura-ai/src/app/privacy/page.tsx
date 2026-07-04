@@ -188,7 +188,7 @@ export default function PrivacyPage() {
     }
   };
 
-  const sections = [
+  const sections: Array<{ title: string; icon: any; content?: string | JSX.Element; status?: string; danger?: boolean; action?: { label: string; onClick: () => void; variant?: string; disabled?: boolean } }> = [
     {
       title: 'Tu privacidad',
       icon: Shield,
@@ -293,11 +293,11 @@ export default function PrivacyPage() {
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="text-base font-semibold text-gray-900">{section.title}</h3>
-                    {typeof section.content === 'string' ? (
+                    {section.content && typeof section.content === 'string' ? (
                       <p className="text-sm text-gray-500 mt-1">{section.content}</p>
-                    ) : (
+                    ) : section.content ? (
                       <div className="mt-2">{section.content}</div>
-                    )}
+                    ) : null}
                     {section.status && !section.content && (
                       <p className="text-sm text-gray-500 mt-1">{section.status}</p>
                     )}

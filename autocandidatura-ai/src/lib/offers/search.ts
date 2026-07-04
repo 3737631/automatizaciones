@@ -47,8 +47,8 @@ function generateMockOffers(criteria: ParsedInstruction): Partial<JobOffer>[] {
       description: `Buscamos ${title.trim()} para unirse a ${company} en ${city}. Valoramos experiencia en tecnologías modernas, trabajo en equipo y orientación a resultados. Ofrecemos contrato indefinido, formación continua y plan de carrera.`,
       city: Math.random() > 0.15 ? city : undefined,
       work_mode: Math.random() > 0.15 ? workMode : undefined,
-      applicationEmail: hasEmail ? `rrhh@${company.toLowerCase().replace(/\s+/g, '')}.com` : undefined,
-      applicationUrl: hasUrl ? `https://${company.toLowerCase().replace(/\s+/g, '')}.com/candidaturas` : undefined,
+      application_email: hasEmail ? `rrhh@${company.toLowerCase().replace(/\s+/g, '')}.com` : undefined,
+      application_url: hasUrl ? `https://${company.toLowerCase().replace(/\s+/g, '')}.com/candidaturas` : undefined,
       source: 'mock',
       requirements: criteria.skills?.length
         ? criteria.skills.join(', ')

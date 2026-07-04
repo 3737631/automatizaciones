@@ -17,7 +17,7 @@ export async function validateOfferForAgent(
   offer: Partial<{
     title: string;
     company: string;
-    description: string;
+    description: string | null;
     applicationEmail: string | null;
     applicationUrl: string | null;
     city: string | null;
@@ -78,7 +78,7 @@ export async function validateOfferForAgent(
   }
 
   // Check spam indicators
-  const descLower = offer.description.toLowerCase();
+  const descLower = (offer.description || '').toLowerCase();
   for (const indicator of SPAM_INDICATORS) {
     if (descLower.includes(indicator)) {
       return {

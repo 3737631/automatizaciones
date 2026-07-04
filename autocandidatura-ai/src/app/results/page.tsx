@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback } from 'react';
+import { Suspense, useState, useEffect, useCallback } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import ResultSummaryCards from '@/components/ResultSummaryCards';
 import ApplicationResultCard from '@/components/ApplicationResultCard';
@@ -14,7 +14,7 @@ import { Bot, BarChart3, RefreshCw } from 'lucide-react';
 
 type Tab = 'applications' | 'offers' | 'errors';
 
-export default function ResultsPage() {
+function ResultsInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get('runId');
@@ -197,5 +197,13 @@ export default function ResultsPage() {
         )}
       </div>
     </div>
+  );
+}
+
+export default function ResultsPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] flex items-center justify-center"><LoadingState message="Cargando..." /></div>}>
+      <ResultsInner />
+    </Suspense>
   );
 }

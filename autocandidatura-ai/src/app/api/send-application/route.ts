@@ -55,9 +55,7 @@ export async function POST(req: NextRequest) {
     const emailResult = await sendEmail({
       to: offer.application_email || '',
       subject,
-      message,
-      accessToken: session.gmail_access_token_encrypted || undefined,
-      refreshToken: session.gmail_refresh_token_encrypted || undefined,
+      html: message,
     });
 
     if (!emailResult.success) {

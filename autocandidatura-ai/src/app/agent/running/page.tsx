@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { Suspense, useState, useEffect, useCallback, useRef } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import AgentStatusBadge from '@/components/AgentStatusBadge';
 import AgentStepTimeline from '@/components/AgentStepTimeline';
@@ -17,7 +17,7 @@ interface PollResponse {
   total_applications_sent?: number;
 }
 
-export default function AgentRunningPage() {
+function AgentRunningInner() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const runId = searchParams.get('id');
@@ -211,5 +211,13 @@ export default function AgentRunningPage() {
         />
       </div>
     </div>
+  );
+}
+
+export default function AgentRunningPage() {
+  return (
+    <Suspense fallback={<div className="min-h-[calc(100vh-4rem)] flex items-center justify-center"><LoadingState message="Cargando..." /></div>}>
+      <AgentRunningInner />
+    </Suspense>
   );
 }
