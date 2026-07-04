@@ -1,9 +1,10 @@
 'use client';
 
-import { useState, useRef, useCallback } from 'react';
+import { useState, useRef, useCallback, useEffect } from 'react';
 import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { uploadCVFromClient } from '@/lib/cv/client-upload';
+import { createSessionFromClient } from '@/lib/supabase/create-session';
 import type { CVAnalysisResult } from '@/types';
 
 interface CVUploadCardProps {
@@ -17,7 +18,25 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
   const [result, setResult] = useState<CVAnalysisResult | null>(null);
   const [error, setError] = useState('');
   const [progress, setProgress] = useState(0);
+  const [sessionReady, setSessionReady] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
+
+  useEffect(() => {
+    const token = localStorage.getItem('autocandidatura_session_token');
+    const email = localStorage.getItem('autocandidatura_connected_email');
+    if (token) {
+      setSessionReady(true);
+    } else if (email) {
+      createSessionFromClient(email, 'mock')
+        .then((newToken) => {
+          localStorage.setItem('autocandidatura_session_token', newToken);
+          setSessionReady(true);
+        })
+        .catch(() => {
+          setError('Sesión no encontrada. Vuelve a conectar tu correo.');
+        });
+    }
+  }, []);
 
   const reset = () => {
     setFile(null);
@@ -60,7 +79,7 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
     try {
       const sessionToken = localStorage.getItem('autocandidatura_session_token');
       if (!sessionToken) {
-        throw new Error('Sesión no encontrada. Vuelve a conectar tu correo.');
+        throw new Error('Primero conecta tu correo para poder subir el CV.');
       }
 
       const clientResult = await uploadCVFromClient(file, sessionToken);
@@ -179,12 +198,19 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         </div>
       )}
 
+      {!sessionReady && !error && (
+        <div className="mt-4 flex items-center justify-center gap-2 text-sm text-gray-500">
+          <Loader2 className="w-4 h-4 animate-spin" />
+          Preparando sesión...
+        </div>
+      )}
+
       <button
         onClick={handleUpload}
-        disabled={!file || uploading}
+        disabled={!file || uploading || !sessionReady}
         className={cn(
           'mt-4 w-full flex items-center justify-center gap-2 px-4 py-2.5 rounded-lg text-sm font-medium transition-colors',
-          file && !uploading
+          file && !uploading && sessionReady
             ? 'bg-blue-600 text-white hover:bg-blue-700'
             : 'bg-gray-100 text-gray-400 cursor-not-allowed'
         )}
@@ -194,6 +220,8 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
             <Loader2 className="w-4 h-4 animate-spin" />
             Subiendo...
           </>
+        ) : !sessionReady ? (
+          'Preparando sesión...'
         ) : (
           'Subir CV'
         )}
