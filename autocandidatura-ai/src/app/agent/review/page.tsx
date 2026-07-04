@@ -32,12 +32,12 @@ export default function ReviewPage() {
   const [error, setError] = useState('');
 
   useEffect(() => {
-    const raw = localStorage.getItem('autocandidatura_review_offers');
-    if (!raw) {
-      router.replace('/agent');
-      return;
-    }
     try {
+      const raw = typeof window !== 'undefined' ? window.localStorage.getItem('autocandidatura_review_offers') : null;
+      if (!raw) {
+        router.replace('/agent');
+        return;
+      }
       const parsed = JSON.parse(raw) as ReviewOffer[];
       setOffers(parsed);
       setSelected(new Set(parsed.map((_, i) => i)));
@@ -74,8 +74,8 @@ export default function ReviewPage() {
     setError('');
 
     try {
-      const sessionId = localStorage.getItem('autocandidatura_review_session_id') || '';
-      const runId = localStorage.getItem('autocandidatura_review_run_id') || '';
+      const sessionId = typeof window !== 'undefined' ? window.localStorage.getItem('autocandidatura_review_session_id') || '' : '';
+      const runId = typeof window !== 'undefined' ? window.localStorage.getItem('autocandidatura_review_run_id') || '' : '';
       const result = await sendSelectedOffers(
         selectedOffers.map((o) => ({ ...o, message: o.message })),
         sessionId,
