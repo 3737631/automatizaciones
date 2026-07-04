@@ -5,6 +5,7 @@ import { Upload, FileText, Loader2, CheckCircle, AlertCircle, X } from 'lucide-r
 import { cn } from '@/lib/utils';
 import { uploadCVFromClient } from '@/lib/cv/client-upload';
 import { createSessionFromClient } from '@/lib/supabase/create-session';
+import { createClient } from '@/lib/supabase/client';
 import type { CVAnalysisResult } from '@/types';
 
 interface CVUploadCardProps {
@@ -70,11 +71,7 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
     if (!file) return;
     setUploading(true);
     setError('');
-    setProgress(0);
-
-    const interval = setInterval(() => {
-      setProgress((p) => Math.min(p + 10, 80));
-    }, 400);
+    setProgress(10);
 
     try {
       const sessionToken = localStorage.getItem('autocandidatura_session_token');
@@ -82,27 +79,55 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         throw new Error('Primero conecta tu correo para poder subir el CV.');
       }
 
+      setProgress(20);
       const clientResult = await uploadCVFromClient(file, sessionToken);
       if (!clientResult.success) {
         throw new Error(clientResult.error || 'Error al subir el CV.');
       }
 
-      clearInterval(interval);
+      setProgress(40);
+
+      const buffer = await file.arrayBuffer();
+      const bytes = new Uint8Array(buffer);
+      let binary = '';
+      for (let i = 0; i < bytes.length; i++) binary += String.fromCharCode(bytes[i]);
+      const pdfBase64 = btoa(binary);
+
+      setProgress(60);
+
+      let finalResult: CVAnalysisResult;
+      try {
+        const supabase = createClient();
+        const { data, error } = await supabase.functions.invoke('analyze-cv', {
+          body: { pdf_base64: pdfBase64 },
+        });
+        if (!error && data && data.detected_skills) {
+          finalResult = {
+            summary: data.summary || '',
+            detected_skills: data.detected_skills || [],
+            detected_experience: data.detected_experience || '',
+            compatible_roles: data.compatible_roles || [],
+            compatible_sectors: data.compatible_sectors || [],
+            recommendations: data.recommendations || [],
+          };
+        } else {
+          throw new Error(data?.error || 'Error de análisis');
+        }
+      } catch {
+        finalResult = {
+          summary: 'CV subido correctamente. Análisis básico disponible.',
+          detected_skills: ['CV subido'],
+          detected_experience: '',
+          compatible_roles: [],
+          compatible_sectors: [],
+          recommendations: ['El análisis detallado se completará al activar el agente.'],
+        };
+      }
+
       setProgress(100);
-
-      const finalResult: CVAnalysisResult = {
-        summary: 'CV subido correctamente. El análisis se completará cuando actives el agente.',
-        detected_skills: [],
-        detected_experience: '',
-        compatible_roles: [],
-        compatible_sectors: [],
-        recommendations: [],
-      };
-
       setResult(finalResult);
       onUploadComplete?.(finalResult);
     } catch (err) {
-      clearInterval(interval);
       setError(err instanceof Error ? err.message : 'Error al subir el archivo.');
     } finally {
       setUploading(false);
