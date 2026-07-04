@@ -14,6 +14,7 @@ export async function uploadCVFromClient(
   try {
     const supabase = createClient(sessionToken);
 
+    // Look up session — RLS matches session_token = x-session-token header
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
       .select('id')
@@ -26,7 +27,9 @@ export async function uploadCVFromClient(
 
     const arrayBuffer = await file.arrayBuffer();
     const fileBuffer = new Uint8Array(arrayBuffer);
-    const storagePath = `${session.id}/${Date.now()}-${file.name}`;
+
+    // RLS policy for storage expects first folder = x-session-token
+    const storagePath = `${sessionToken}/${Date.now()}-${file.name}`;
 
     const { data: uploadData, error: uploadError } = await supabase.storage
       .from('cvs')
@@ -37,7 +40,7 @@ export async function uploadCVFromClient(
 
     if (uploadError) {
       if (uploadError.message?.includes('policy')) {
-        return { success: false, error: 'Error de permisos. Asegúrate de que el bucket "cvs" existe y el archivo no está duplicado.' };
+        return { success: false, error: 'Error de permisos. Asegúrate de que el bucket "cvs" existe.' };
       }
       return { success: false, error: `Error al guardar el archivo: ${uploadError.message}` };
     }

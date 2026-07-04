@@ -6,26 +6,8 @@ export async function createSessionFromClient(email: string, provider: string) {
 
   const supabase = createClient(sessionToken);
 
-  const { data: existing } = await supabase
-    .from('sessions')
-    .select('id, session_token')
-    .eq('connected_email', email)
-    .maybeSingle();
-
-  if (existing) {
-    const { error: updateError } = await supabase
-      .from('sessions')
-      .update({
-        session_token: sessionToken,
-        email_provider: provider,
-      })
-      .eq('id', existing.id);
-
-    if (updateError) throw new Error('Error al actualizar sesión');
-    return sessionToken;
-  }
-
-  const { error: insertError } = await supabase.from('sessions').insert({
+  // Insert directly — RLS allows INSERT with CHECK (true)
+  const { error } = await supabase.from('sessions').insert({
     session_token: sessionToken,
     connected_email: email,
     email_provider: provider,
@@ -33,6 +15,9 @@ export async function createSessionFromClient(email: string, provider: string) {
     consent_accepted_at: new Date().toISOString(),
   });
 
-  if (insertError) throw new Error('Error al crear sesión');
+  if (error) {
+    throw new Error('Error al conectar: no se pudo crear la sesión.');
+  }
+
   return sessionToken;
 }
