@@ -175,7 +175,7 @@ export async function startAgentClient(
   if (offers.length === 0) {
     await supabase.from('agent_runs').update({
       status: 'completed', finished_at: new Date().toISOString(),
-      total_offers_found: 0, total_applications_sent: 0, total_errors,
+      total_offers_found: 0, total_applications_sent: 0, total_errors: totalErrors,
     }).eq('id', runId);
     return;
   }
@@ -215,7 +215,7 @@ export async function startAgentClient(
   if (validOffers.length === 0) {
     await supabase.from('agent_runs').update({
       status: 'completed', finished_at: new Date().toISOString(),
-      total_offers_found: totalOffersFound, total_applications_sent: 0, total_errors,
+      total_offers_found: totalOffersFound, total_applications_sent: 0, total_errors: totalErrors,
     }).eq('id', runId);
     return;
   }
@@ -354,7 +354,7 @@ export async function startAgentClient(
     finished_at: new Date().toISOString(),
     total_offers_found: totalOffersFound,
     total_applications_sent: totalApplicationsSent,
-    total_errors,
+    total_errors: totalErrors,
   }).eq('id', runId);
 
   await updateStep(supabase, step8.id, 'completed', `Completado. ${totalApplicationsSent} candidaturas enviadas`);
