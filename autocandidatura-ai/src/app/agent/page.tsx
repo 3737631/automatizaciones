@@ -6,6 +6,7 @@ import AgentPromptBox from '@/components/AgentPromptBox';
 import ConsentModal from '@/components/ConsentModal';
 import LoadingState from '@/components/LoadingState';
 import { createClient } from '@/lib/supabase/client';
+import { startAgentClient } from '@/lib/agent/client-engine';
 import type { CVAnalysisResult } from '@/types';
 import { Mail, FileText, Bot, ArrowRight, AlertCircle } from 'lucide-react';
 
@@ -94,7 +95,8 @@ export default function AgentPage() {
       if (runError) throw runError;
 
       localStorage.removeItem('autocandidatura_cv_analysis');
-      router.push(`/agent/running?id=${runData.id}`);
+      router.push(`/agent/running?id=${runData.id}&token=${encodeURIComponent(token || '')}`);
+      startAgentClient(token || '', instructionData.id, runData.id).catch(console.error);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al activar el agente');
     } finally {

@@ -7,15 +7,9 @@ import AgentStepTimeline from '@/components/AgentStepTimeline';
 import AgentControls from '@/components/AgentControls';
 import LoadingState from '@/components/LoadingState';
 import ErrorState from '@/components/ErrorState';
+import { createClient } from '@/lib/supabase/client';
 import type { AgentStatus, StepUpdate } from '@/types';
 import { Bot, CheckCircle, AlertCircle, ChevronRight } from 'lucide-react';
-
-interface PollResponse {
-  status: AgentStatus;
-  steps: StepUpdate[];
-  total_offers_found?: number;
-  total_applications_sent?: number;
-}
 
 function AgentRunningInner() {
   const router = useRouter();
@@ -33,26 +27,36 @@ function AgentRunningInner() {
   const pollStatus = useCallback(async () => {
     if (!runId) return;
     try {
-      const res = await fetch(`/api/agent/status?runId=${runId}`);
-      if (!res.ok) throw new Error('Error al obtener estado');
-      const data: PollResponse = await res.json();
+      const supabase = createClient();
+      const [runResult, stepsResult] = await Promise.all([
+        supabase.from('agent_runs').select('*').eq('id', runId).single(),
+        supabase.from('agent_steps').select('*').eq('agent_run_id', runId).order('created_at', { ascending: true }),
+      ]);
+
       if (!mountedRef.current) return;
 
-      setStatus(data.status);
-      setSteps(data.steps);
-      if (data.total_offers_found !== undefined || data.total_applications_sent !== undefined) {
+      if (runResult.error || !runResult.data) {
+        setError('Ejecución no encontrada');
+        return;
+      }
+
+      const run = runResult.data;
+      setStatus(run.status as AgentStatus);
+      setSteps((stepsResult.data || []) as StepUpdate[]);
+
+      if (run.total_offers_found !== undefined || run.total_applications_sent !== undefined) {
         setStats({
-          offers: data.total_offers_found ?? 0,
-          applications: data.total_applications_sent ?? 0,
+          offers: run.total_offers_found ?? 0,
+          applications: run.total_applications_sent ?? 0,
         });
       }
 
-      if (data.status === 'completed' || data.status === 'stopped' || data.status === 'error') {
+      if (run.status === 'completed' || run.status === 'stopped' || run.status === 'error') {
         setCompleted(true);
       }
-    } catch (err) {
+    } catch {
       if (mountedRef.current) {
-        setError(err instanceof Error ? err.message : 'Error de conexión');
+        setError('Error de conexión');
       }
     } finally {
       if (mountedRef.current) setLoading(false);
@@ -75,13 +79,11 @@ function AgentRunningInner() {
   }, [runId, pollStatus]);
 
   const handlePause = async () => {
+    if (!runId) return;
     try {
-      const res = await fetch('/api/agent/pause', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ runId }),
-      });
-      if (!res.ok) throw new Error('Error al pausar');
+      const supabase = createClient();
+      const { error: err } = await supabase.from('agent_runs').update({ status: 'paused' }).eq('id', runId);
+      if (err) throw err;
       setStatus('paused');
     } catch {
       setError('No se pudo pausar el agente');
@@ -89,13 +91,11 @@ function AgentRunningInner() {
   };
 
   const handleResume = async () => {
+    if (!runId) return;
     try {
-      const res = await fetch('/api/agent/resume', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ runId }),
-      });
-      if (!res.ok) throw new Error('Error al reanudar');
+      const supabase = createClient();
+      const { error: err } = await supabase.from('agent_runs').update({ status: 'running' }).eq('id', runId);
+      if (err) throw err;
       setStatus('running');
     } catch {
       setError('No se pudo reanudar el agente');
@@ -103,13 +103,14 @@ function AgentRunningInner() {
   };
 
   const handleStop = async () => {
+    if (!runId) return;
     try {
-      const res = await fetch('/api/agent/stop', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ runId }),
-      });
-      if (!res.ok) throw new Error('Error al detener');
+      const supabase = createClient();
+      const { error: err } = await supabase.from('agent_runs').update({
+        status: 'stopped',
+        finished_at: new Date().toISOString(),
+      }).eq('id', runId);
+      if (err) throw err;
       setStatus('stopped');
       setCompleted(true);
     } catch {
@@ -129,7 +130,7 @@ function AgentRunningInner() {
     );
   }
 
-  if (error && !status) {
+  if (error && steps.length === 0) {
     return (
       <div className="min-h-[calc(100vh-4rem)] flex items-center justify-center px-4">
         <ErrorState message={error} onRetry={pollStatus} />
