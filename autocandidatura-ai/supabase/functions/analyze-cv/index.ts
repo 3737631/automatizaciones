@@ -1,5 +1,4 @@
 import "@supabase/functions-js/edge-runtime.d.ts"
-import { withSupabase } from "@supabase/server"
 
 function extractTextFromPDF(buffer: Uint8Array): string {
   const text = new TextDecoder("utf-8", { fatal: false }).decode(buffer)
@@ -16,14 +15,7 @@ function extractTextFromPDF(buffer: Uint8Array): string {
   return lines.filter((l) => l.length > 2).join("\n")
 }
 
-async function analyzeWithOpenRouter(text: string): Promise<{
-  summary: string
-  detected_skills: string[]
-  detected_experience: string
-  compatible_roles: string[]
-  compatible_sectors: string[]
-  recommendations: string[]
-}> {
+async function analyzeWithOpenRouter(text: string) {
   const apiKey = Deno.env.get("OPENROUTER_API_KEY")
   if (!apiKey) throw new Error("OPENROUTER_API_KEY not set")
 
@@ -53,8 +45,8 @@ async function analyzeWithOpenRouter(text: string): Promise<{
   }
 
   const data = await res.json()
-  const text = data?.choices?.[0]?.message?.content || ""
-  const cleaned = text.replace(/```json\s*/i, "").replace(/```/g, "").trim()
+  const otext = data?.choices?.[0]?.message?.content || ""
+  const cleaned = otext.replace(/```json\s*/i, "").replace(/```/g, "").trim()
   const parsed = JSON.parse(cleaned)
 
   return {
@@ -67,41 +59,49 @@ async function analyzeWithOpenRouter(text: string): Promise<{
   }
 }
 
-export default {
-  fetch: withSupabase({ auth: ["publishable", "secret"] }, async (req) => {
-    const { pdf_base64 } = await req.json() as { pdf_base64: string }
+async function handler(req: Request): Promise<Response> {
+  const authHeader = req.headers.get("authorization") || ""
+  const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || ""
+  const supabaseAnonKey = Deno.env.get("SUPABASE_ANON_KEY") || ""
+  const valid = authHeader === `Bearer ${supabaseAnonKey}` || authHeader === `Bearer ${serviceKey}`
+  if (!valid) {
+    return Response.json({ message: "Invalid credentials", code: "INVALID_CREDENTIALS" }, { status: 401 })
+  }
 
-    const binaryStr = atob(pdf_base64)
-    const bytes = new Uint8Array(binaryStr.length)
-    for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
+  const { pdf_base64 } = await req.json() as { pdf_base64: string }
 
-    const extractedText = extractTextFromPDF(bytes)
+  const binaryStr = atob(pdf_base64)
+  const bytes = new Uint8Array(binaryStr.length)
+  for (let i = 0; i < binaryStr.length; i++) bytes[i] = binaryStr.charCodeAt(i)
 
-    if (extractedText.length < 20) {
-      return Response.json({
-        error: "No se pudo extraer texto del PDF",
-        detected_skills: [],
-        summary: "No se pudo analizar el CV automáticamente.",
-        detected_experience: "",
-        compatible_roles: [],
-        compatible_sectors: [],
-        recommendations: ["Asegúrate de que el PDF contenga texto seleccionable (no escaneado)"],
-      })
-    }
+  const extractedText = extractTextFromPDF(bytes)
 
-    try {
-      const result = await analyzeWithOpenRouter(extractedText)
-      return Response.json({ extracted_text: extractedText, ...result })
-    } catch (err) {
-      return Response.json({
-        error: err instanceof Error ? err.message : "Error de análisis",
-        detected_skills: ["CV subido"],
-        summary: "CV subido correctamente.",
-        detected_experience: "",
-        compatible_roles: [],
-        compatible_sectors: [],
-        recommendations: ["El análisis con IA no está disponible temporalmente."],
-      })
-    }
-  }),
+  if (extractedText.length < 20) {
+    return Response.json({
+      error: "No se pudo extraer texto del PDF",
+      detected_skills: [],
+      summary: "No se pudo analizar el CV automáticamente.",
+      detected_experience: "",
+      compatible_roles: [],
+      compatible_sectors: [],
+      recommendations: ["Asegúrate de que el PDF contenga texto seleccionable (no escaneado)"],
+    })
+  }
+
+  try {
+    const result = await analyzeWithOpenRouter(extractedText)
+    return Response.json({ extracted_text: extractedText, ...result })
+  } catch (err) {
+    return Response.json({
+      error: err instanceof Error ? err.message : "Error de análisis",
+      detected_skills: ["CV subido"],
+      summary: "CV subido correctamente.",
+      detected_experience: "",
+      compatible_roles: [],
+      compatible_sectors: [],
+      recommendations: ["El análisis con IA no está disponible temporalmente."],
+    })
+  }
 }
+
+Deno.serve(handler)

@@ -16,6 +16,7 @@ interface JobOffer {
   work_mode: string | null
   description: string | null
   application_email: string | null
+  application_url: string | null
   url: string | null
   source: string
 }
@@ -46,6 +47,7 @@ async function searchInfoJobs(criteria: SearchCriteria): Promise<JobOffer[]> {
       work_mode: mode.includes("remoto") ? "remoto" : mode.includes("presencial") ? "presencial" : "hibrido",
       description: o.description || null,
       application_email: null,
+      application_url: o.link || null,
       url: o.link || null,
       source: "infojobs",
     }
@@ -75,30 +77,31 @@ async function searchAdzuna(criteria: SearchCriteria): Promise<JobOffer[]> {
     city: r.location?.display_name?.split(",")?.[0]?.trim() || null,
     work_mode: null,
     description: r.description || null,
-    application_email: null,
-    url: r.redirect_url || null,
-    source: "adzuna",
+      application_email: null,
+      application_url: r.redirect_url || null,
+      url: r.redirect_url || null,
+      source: "adzuna",
   }))
 
   return offers
 }
 
 const MOCK_OFFERS: JobOffer[] = [
-  { title: "Médico de Familia", company: "Hospital Clínico", city: "Madrid", work_mode: "presencial", description: "Buscamos médico de familia para consultas externas. Contrato estable, formación continuada y horario flexible.", application_email: "rrhh@hospitalclinico.es", url: null, source: "mock" },
-  { title: "Enfermero/a de Urgencias", company: "Sanitas", city: "Barcelona", work_mode: "presencial", description: "Precisamos enfermero/a para servicio de urgencias hospitalarias. Experiencia mínima 2 años.", application_email: "talento@sanitas.es", url: null, source: "mock" },
-  { title: "Médico Especialista", company: "Quirón Salud", city: "Madrid", work_mode: "presencial", description: "Incorporamos médico especialista para consultas. Ofrecemos contrato indefinido y desarrollo profesional.", application_email: "empleo@quironsalud.es", url: null, source: "mock" },
-  { title: "Pediatra", company: "HM Hospitales", city: "Valencia", work_mode: "presencial", description: "Buscamos pediatra para unidad de pediatría hospitalaria. Jornada completa.", application_email: "hr@hmhospitales.com", url: null, source: "mock" },
-  { title: "Cardiólogo", company: "Roche", city: "Barcelona", work_mode: "hibrido", description: "Cardiólogo para investigación clínica y consultas. Colaboración con equipos multidisciplinares.", application_email: "careers@roche.es", url: null, source: "mock" },
-  { title: "Abogado Laboralista", company: "Bufete Martínez", city: "Madrid", work_mode: "presencial", description: "Despacho de abogados busca letrado laboralista con experiencia en despidos y negociación colectiva.", application_email: "rrhh@bufetemartinez.es", url: null, source: "mock" },
-  { title: "Profesor de Secundaria", company: "Colegio Estudio", city: "Madrid", work_mode: "presencial", description: "Profesor para ESO y Bachillerato. Titulación requerida y experiencia docente.", application_email: "jobs@colegioestudio.es", url: null, source: "mock" },
-  { title: "Enfermero/a de Quirófano", company: "Mutua Madrileña", city: "Madrid", work_mode: "presencial", description: "Enfermero/a especializado en quirófano para centro hospitalario en Madrid.", application_email: "rrhh@mutuamadrilena.es", url: null, source: "mock" },
-  { title: "Comercial Sector Farmacéutico", company: "Mapfre", city: "Barcelona", work_mode: "hibrido", description: "Comercial con experiencia en visita médica para representar nuestro portfolio.", application_email: "talento@mapfre.com", url: null, source: "mock" },
-  { title: "Administrativo Hospitalario", company: "Hospital Clínico", city: "Valencia", work_mode: "presencial", description: "Administrativo para gestión de historias clínicas y admisión de pacientes.", application_email: "rrhh@hospitalclinico.es", url: null, source: "mock" },
-  { title: "Médico de Urgencias", company: "Sanitas", city: "Sevilla", work_mode: "presencial", description: "Médico para servicio de urgencias 24h. Contrato con turnos rotativos.", application_email: "empleo@sanitas.es", url: null, source: "mock" },
-  { title: "Desarrollador Full Stack", company: "TechCorp Spain", city: "Madrid", work_mode: "hibrido", description: "Buscamos desarrollador full stack con experiencia en React y Node.js.", application_email: "rrhh@techcorp.es", url: null, source: "mock" },
-  { title: "Enfermero/a de Atención Primaria", company: "Quirón Salud", city: "Bilbao", work_mode: "presencial", description: "Enfermero/a para centro de atención primaria. Horario de mañanas.", application_email: "rrhh@quironsalud.es", url: null, source: "mock" },
-  { title: "Data Scientist", company: "AI Labs", city: "Madrid", work_mode: "remoto", description: "Científico de datos para desarrollar modelos de machine learning.", application_email: "careers@ailabs.es", url: null, source: "mock" },
-  { title: "Gerocultor/a", company: "Grupo Hospitalario HM", city: "Málaga", work_mode: "presencial", description: "Auxiliar de geriatría para residencia de mayores. Experiencia y formación en geriatría.", application_email: "rrhh@hmhospitales.com", url: null, source: "mock" },
+  { title: "Médico de Familia", company: "Hospital Clínico", city: "Madrid", work_mode: "presencial", description: "Buscamos médico de familia para consultas externas. Contrato estable, formación continuada y horario flexible.", application_email: "rrhh@hospitalclinico.es", application_url: null, url: null, source: "mock" },
+  { title: "Enfermero/a de Urgencias", company: "Sanitas", city: "Barcelona", work_mode: "presencial", description: "Precisamos enfermero/a para servicio de urgencias hospitalarias. Experiencia mínima 2 años.", application_email: "talento@sanitas.es", application_url: null, url: null, source: "mock" },
+  { title: "Médico Especialista", company: "Quirón Salud", city: "Madrid", work_mode: "presencial", description: "Incorporamos médico especialista para consultas. Ofrecemos contrato indefinido y desarrollo profesional.", application_email: "empleo@quironsalud.es", application_url: null, url: null, source: "mock" },
+  { title: "Pediatra", company: "HM Hospitales", city: "Valencia", work_mode: "presencial", description: "Buscamos pediatra para unidad de pediatría hospitalaria. Jornada completa.", application_email: "hr@hmhospitales.com", application_url: null, url: null, source: "mock" },
+  { title: "Cardiólogo", company: "Roche", city: "Barcelona", work_mode: "hibrido", description: "Cardiólogo para investigación clínica y consultas. Colaboración con equipos multidisciplinares.", application_email: "careers@roche.es", application_url: null, url: null, source: "mock" },
+  { title: "Abogado Laboralista", company: "Bufete Martínez", city: "Madrid", work_mode: "presencial", description: "Despacho de abogados busca letrado laboralista con experiencia en despidos y negociación colectiva.", application_email: "rrhh@bufetemartinez.es", application_url: null, url: null, source: "mock" },
+  { title: "Profesor de Secundaria", company: "Colegio Estudio", city: "Madrid", work_mode: "presencial", description: "Profesor para ESO y Bachillerato. Titulación requerida y experiencia docente.", application_email: "jobs@colegioestudio.es", application_url: null, url: null, source: "mock" },
+  { title: "Enfermero/a de Quirófano", company: "Mutua Madrileña", city: "Madrid", work_mode: "presencial", description: "Enfermero/a especializado en quirófano para centro hospitalario en Madrid.", application_email: "rrhh@mutuamadrilena.es", application_url: null, url: null, source: "mock" },
+  { title: "Comercial Sector Farmacéutico", company: "Mapfre", city: "Barcelona", work_mode: "hibrido", description: "Comercial con experiencia en visita médica para representar nuestro portfolio.", application_email: "talento@mapfre.com", application_url: null, url: null, source: "mock" },
+  { title: "Administrativo Hospitalario", company: "Hospital Clínico", city: "Valencia", work_mode: "presencial", description: "Administrativo para gestión de historias clínicas y admisión de pacientes.", application_email: "rrhh@hospitalclinico.es", application_url: null, url: null, source: "mock" },
+  { title: "Médico de Urgencias", company: "Sanitas", city: "Sevilla", work_mode: "presencial", description: "Médico para servicio de urgencias 24h. Contrato con turnos rotativos.", application_email: "empleo@sanitas.es", application_url: null, url: null, source: "mock" },
+  { title: "Desarrollador Full Stack", company: "TechCorp Spain", city: "Madrid", work_mode: "hibrido", description: "Buscamos desarrollador full stack con experiencia en React y Node.js.", application_email: "rrhh@techcorp.es", application_url: null, url: null, source: "mock" },
+  { title: "Enfermero/a de Atención Primaria", company: "Quirón Salud", city: "Bilbao", work_mode: "presencial", description: "Enfermero/a para centro de atención primaria. Horario de mañanas.", application_email: "rrhh@quironsalud.es", application_url: null, url: null, source: "mock" },
+  { title: "Data Scientist", company: "AI Labs", city: "Madrid", work_mode: "remoto", description: "Científico de datos para desarrollar modelos de machine learning.", application_email: "careers@ailabs.es", application_url: null, url: null, source: "mock" },
+  { title: "Gerocultor/a", company: "Grupo Hospitalario HM", city: "Málaga", work_mode: "presencial", description: "Auxiliar de geriatría para residencia de mayores. Experiencia y formación en geriatría.", application_email: "rrhh@hmhospitales.com", application_url: null, url: null, source: "mock" },
 ]
 
 function getMockOffers(criteria: SearchCriteria): JobOffer[] {

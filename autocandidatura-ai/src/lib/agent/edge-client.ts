@@ -26,8 +26,10 @@ interface EdgeJobOffer {
   work_mode: string | null
   description: string | null
   application_email: string | null
+  application_url: string | null
   url: string | null
   source: string
+  unique_hash?: string
 }
 
 export async function searchOffersReal(criteria: ParsedInstruction): Promise<Partial<JobOffer>[]> {
@@ -42,12 +44,14 @@ export async function searchOffersReal(criteria: ParsedInstruction): Promise<Par
     if (!error && data?.offers?.length > 0) {
       return data.offers.map((o: EdgeJobOffer) => ({
         id: generateUniqueHash({ title: o.title, company: o.company, description: o.description }),
+        unique_hash: o.unique_hash || generateUniqueHash({ title: o.title, company: o.company, description: o.description }),
         title: o.title,
         company: o.company,
         city: o.city,
         work_mode: o.work_mode,
         description: o.description,
         application_email: o.application_email,
+        application_url: o.application_url || o.url,
         source: o.source as JobOffer['source'],
       }))
     }
