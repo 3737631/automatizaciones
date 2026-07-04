@@ -6,21 +6,11 @@ on:
     paths:
       - 'autocandidatura-ai/**'
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
-concurrency:
-  group: pages
-  cancel-in-progress: false
-
 jobs:
-  build-and-deploy:
+  deploy:
     runs-on: ubuntu-latest
-    defaults:
-      run:
-        working-directory: ./autocandidatura-ai
+    permissions:
+      contents: write
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -33,15 +23,13 @@ jobs:
           cache-dependency-path: autocandidatura-ai/package-lock.json
 
       - name: Install dependencies
-        run: npm ci
+        run: cd autocandidatura-ai && npm ci
 
       - name: Build
-        run: npm run build
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v3
-        with:
-          path: ./autocandidatura-ai/out
+        run: cd autocandidatura-ai && npm run build
 
       - name: Deploy to GitHub Pages
-        uses: actions/deploy-pages@v4
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./autocandidatura-ai/out
