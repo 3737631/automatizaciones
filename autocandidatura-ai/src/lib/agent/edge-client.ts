@@ -56,7 +56,7 @@ export async function searchOffersReal(criteria: ParsedInstruction): Promise<Par
       }))
     }
   } catch {
-    // fall through to mock
+    // fallback to mock
   }
   return mockSearchOffers(criteria)
 }
@@ -140,7 +140,7 @@ export async function sendApplicationReal(
         return true
       }
     } catch {
-      // fall through to mock
+      // fallback to mock
     }
   }
   return sendMockEmail(to, subject, message)
