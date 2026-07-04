@@ -11,10 +11,15 @@ export function createClient(sessionToken?: string) {
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
     {
       global: { headers },
-      auth: {
-        autoRefreshToken: false,
-        persistSession: false,
-      },
+      auth: { autoRefreshToken: false, persistSession: false },
     }
   );
+}
+
+export function getSupabaseUrl(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_URL || '';
+}
+
+export function getAnonKey(): string {
+  return process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || '';
 }

@@ -1,4 +1,17 @@
-import { createClient } from '@/lib/supabase/client';
+import { getSupabaseUrl, getAnonKey } from '@/lib/supabase/client';
+
+async function supabaseFetch(path: string, options: RequestInit = {}) {
+  const url = `${getSupabaseUrl()}${path}`;
+  const res = await fetch(url, {
+    ...options,
+    headers: {
+      'apikey': getAnonKey(),
+      'Authorization': `Bearer ${getAnonKey()}`,
+      ...(options.headers || {}),
+    },
+  });
+  return res;
+}
 
 export async function uploadCVFromClient(
   file: File,
@@ -12,55 +25,78 @@ export async function uploadCVFromClient(
   }
 
   try {
-    const supabase = createClient(sessionToken);
+    // 1. Look up session by session_token
+    const selectRes = await supabaseFetch(
+      `/rest/v1/sessions?select=id&session_token=eq.${encodeURIComponent(sessionToken)}&limit=1`,
+      {
+        headers: {
+          'Accept': 'application/json',
+          'x-session-token': sessionToken,
+        },
+      }
+    );
 
-    // Look up session — RLS matches session_token = x-session-token header
-    const { data: session, error: sessionError } = await supabase
-      .from('sessions')
-      .select('id')
-      .eq('session_token', sessionToken)
-      .single();
+    if (!selectRes.ok) {
+      return { success: false, error: 'Error al verificar sesión.' };
+    }
 
-    if (sessionError || !session) {
+    const sessions = await selectRes.json();
+    if (!sessions || sessions.length === 0) {
       return { success: false, error: 'Sesión no válida. Vuelve a conectar tu correo.' };
     }
 
-    const arrayBuffer = await file.arrayBuffer();
-    const fileBuffer = new Uint8Array(arrayBuffer);
+    const sessionId: string = sessions[0].id;
 
-    // RLS policy for storage expects first folder = x-session-token
+    // 2. Upload file to storage
+    const arrayBuffer = await file.arrayBuffer();
     const storagePath = `${sessionToken}/${Date.now()}-${file.name}`;
 
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('cvs')
-      .upload(storagePath, fileBuffer, {
-        contentType: 'application/pdf',
-        upsert: false,
-      });
-
-    if (uploadError) {
-      if (uploadError.message?.includes('policy')) {
-        return { success: false, error: 'Error de permisos. Asegúrate de que el bucket "cvs" existe.' };
+    const uploadRes = await supabaseFetch(
+      `/storage/v1/object/cvs/${storagePath}`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/pdf',
+          'x-session-token': sessionToken,
+          'x-upsert': 'false',
+        },
+        body: arrayBuffer,
       }
-      return { success: false, error: `Error al guardar el archivo: ${uploadError.message}` };
+    );
+
+    if (!uploadRes.ok) {
+      const text = await uploadRes.text();
+      return { success: false, error: `Error al guardar el archivo: ${text}` };
     }
 
-    const { data: urlData } = supabase.storage.from('cvs').getPublicUrl(uploadData.path);
-    const fileUrl = urlData.publicUrl;
+    // 3. Get public URL
+    const fileUrl = `${getSupabaseUrl()}/storage/v1/object/public/cvs/${storagePath}`;
 
-    const { error: insertError } = await supabase.from('cvs').insert({
-      session_id: session.id,
-      file_url: fileUrl,
-      file_name: file.name,
-      extracted_text: null,
-      ai_summary: null,
-      detected_skills: null,
-      detected_experience: null,
-      compatible_roles: null,
-      compatible_sectors: null,
-    });
+    // 4. Insert record in cvs table
+    const insertRes = await supabaseFetch(
+      `/rest/v1/cvs`,
+      {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-session-token': sessionToken,
+          'Prefer': 'return=minimal',
+        },
+        body: JSON.stringify({
+          session_id: sessionId,
+          file_url: fileUrl,
+          file_name: file.name,
+          extracted_text: null,
+          ai_summary: null,
+          detected_skills: null,
+          detected_experience: null,
+          compatible_roles: null,
+          compatible_sectors: null,
+        }),
+      }
+    );
 
-    if (insertError) {
+    if (!insertRes.ok) {
       return { success: false, error: 'Error al guardar el CV.' };
     }
 
