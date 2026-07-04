@@ -47,3 +47,45 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deployment
         uses: actions/deploy-pages@v4
+
+  deploy-edge-functions:
+    runs-on: ubuntu-latest
+    needs: build-and-deploy
+    if: ${{ vars.SUPABASE_PROJECT_REF != '' && secrets.SUPABASE_ACCESS_TOKEN != '' }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link project
+        working-directory: ./autocandidatura-ai
+        run: supabase link --project-ref ${{ vars.SUPABASE_PROJECT_REF }}
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Deploy functions
+        working-directory: ./autocandidatura-ai
+        run: |
+          supabase functions deploy search-offers
+          supabase functions deploy generate-message
+          supabase functions deploy send-application
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+      - name: Set secrets
+        working-directory: ./autocandidatura-ai
+        if: ${{ secrets.GEMINI_API_KEY != '' || secrets.INFOJOBS_CLIENT_ID != '' || secrets.ADZUNA_APP_ID != '' || secrets.GOOGLE_CLIENT_ID != '' }}
+        run: |
+          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then supabase secrets set GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"; fi
+          if [ -n "${{ secrets.INFOJOBS_CLIENT_ID }}" ]; then supabase secrets set INFOJOBS_CLIENT_ID="${{ secrets.INFOJOBS_CLIENT_ID }}"; fi
+          if [ -n "${{ secrets.INFOJOBS_CLIENT_SECRET }}" ]; then supabase secrets set INFOJOBS_CLIENT_SECRET="${{ secrets.INFOJOBS_CLIENT_SECRET }}"; fi
+          if [ -n "${{ secrets.ADZUNA_APP_ID }}" ]; then supabase secrets set ADZUNA_APP_ID="${{ secrets.ADZUNA_APP_ID }}"; fi
+          if [ -n "${{ secrets.ADZUNA_APP_KEY }}" ]; then supabase secrets set ADZUNA_APP_KEY="${{ secrets.ADZUNA_APP_KEY }}"; fi
+          if [ -n "${{ secrets.GOOGLE_CLIENT_ID }}" ]; then supabase secrets set GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"; fi
+          if [ -n "${{ secrets.GOOGLE_CLIENT_SECRET }}" ]; then supabase secrets set GOOGLE_CLIENT_SECRET="${{ secrets.GOOGLE_CLIENT_SECRET }}"; fi
+        env:
+          SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
