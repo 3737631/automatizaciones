@@ -17,6 +17,8 @@ async function invokeWithTimeout(fn: () => Promise<any>, ms = 15000): Promise<an
   return result
 }
 
+
+
 interface EdgeJobOffer {
   title: string
   company: string

@@ -108,7 +108,7 @@ export async function startAgentClient(
   let cvResult: CVAnalysisResult | undefined;
   let criteria: ParsedInstruction | undefined;
 
-  // Phase 1: Analyze CV from Supabase
+  // Phase 1: Analyze CV from Supabase with AI
   const step1 = stepRecords[0];
   await updateStep(supabase, step1.id, 'processing');
   onProgress?.(step1.step_name, 'processing');
