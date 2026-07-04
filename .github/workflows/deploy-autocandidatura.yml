@@ -79,9 +79,7 @@ jobs:
       - name: Set API keys as Supabase secrets
         working-directory: ./autocandidatura-ai
         run: |
-          if [ -n "${{ secrets.GEMINI_API_KEY }}" ]; then supabase secrets set GEMINI_API_KEY="${{ secrets.GEMINI_API_KEY }}"; fi
-          if [ -n "${{ secrets.INFOJOBS_CLIENT_ID }}" ]; then supabase secrets set INFOJOBS_CLIENT_ID="${{ secrets.INFOJOBS_CLIENT_ID }}"; fi
-          if [ -n "${{ secrets.INFOJOBS_CLIENT_SECRET }}" ]; then supabase secrets set INFOJOBS_CLIENT_SECRET="${{ secrets.INFOJOBS_CLIENT_SECRET }}"; fi
+          if [ -n "${{ secrets.OPENROUTER_API_KEY }}" ]; then supabase secrets set OPENROUTER_API_KEY="${{ secrets.OPENROUTER_API_KEY }}"; fi
           if [ -n "${{ secrets.ADZUNA_APP_ID }}" ]; then supabase secrets set ADZUNA_APP_ID="${{ secrets.ADZUNA_APP_ID }}"; fi
           if [ -n "${{ secrets.ADZUNA_APP_KEY }}" ]; then supabase secrets set ADZUNA_APP_KEY="${{ secrets.ADZUNA_APP_KEY }}"; fi
           if [ -n "${{ secrets.GOOGLE_CLIENT_ID }}" ]; then supabase secrets set GOOGLE_CLIENT_ID="${{ secrets.GOOGLE_CLIENT_ID }}"; fi

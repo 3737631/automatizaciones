@@ -4,27 +4,19 @@ import { withSupabase } from "@supabase/server"
 function extractTextFromPDF(buffer: Uint8Array): string {
   const text = new TextDecoder("utf-8", { fatal: false }).decode(buffer)
   const lines: string[] = []
-  const streamMatch = text.match(/stream\s(.+?)\sendstream/s)
-  if (streamMatch) {
-    lines.push(streamMatch[1])
-  }
-  const textMatch = text.match(/\(([^)]*)\)/g)
-  if (textMatch) {
-    lines.push(...textMatch.map((m) => m.slice(1, -1)))
-  }
   const btMatches = text.match(/BT\s*(.+?)\s*ET/gs)
   if (btMatches) {
     for (const bt of btMatches) {
       const parts = bt.match(/\(([^)]*)\)/g)
       if (parts) lines.push(...parts.map((m) => m.slice(1, -1)))
-      const tjs = bt.match(/Tj\s*\(([^)]*)\)/g)
-      if (tjs) lines.push(...tjs.map((m) => m.replace(/Tj\s*\(/, "").replace(/\)$/, "")))
     }
   }
-  return lines.filter((l) => l.length > 1).join("\n")
+  const textMatches = text.match(/\(([^)]*)\)/g)
+  if (textMatches) lines.push(...textMatches.map((m) => m.slice(1, -1)))
+  return lines.filter((l) => l.length > 2).join("\n")
 }
 
-async function analyzeWithGemini(text: string): Promise<{
+async function analyzeWithOpenRouter(text: string): Promise<{
   summary: string
   detected_skills: string[]
   detected_experience: string
@@ -32,45 +24,39 @@ async function analyzeWithGemini(text: string): Promise<{
   compatible_sectors: string[]
   recommendations: string[]
 }> {
-  const apiKey = Deno.env.get("GEMINI_API_KEY")
-  if (!apiKey) throw new Error("GEMINI_API_KEY not set")
+  const apiKey = Deno.env.get("OPENROUTER_API_KEY")
+  if (!apiKey) throw new Error("OPENROUTER_API_KEY not set")
 
-  const prompt = `Eres un experto en análisis de currículums.
-Analiza el siguiente texto extraído de un CV y devuelve ÚNICAMENTE un JSON con esta estructura:
-{
-  "summary": "resumen breve del perfil profesional (2-3 frases)",
-  "detected_skills": ["habilidad1", "habilidad2", ...],
-  "detected_experience": "descripción de la experiencia relevante",
-  "compatible_roles": ["rol compatible 1", "rol compatible 2", ...],
-  "compatible_sectors": ["sector1", "sector2", ...],
-  "recommendations": ["recomendación 1", ...]
-}
+  const systemPrompt = "Eres un experto en análisis de currículums. Responde ÚNICAMENTE con JSON: {\"summary\":\"...\",\"detected_skills\":[\"...\"],\"detected_experience\":\"...\",\"compatible_roles\":[\"...\"],\"compatible_sectors\":[\"...\"],\"recommendations\":[\"...\"]}"
+  const userPrompt = `Analiza este CV:\n\n${text.slice(0, 15000)}`
 
-TEXTO DEL CV:
-${text.slice(0, 15000)}`
-
-  const res = await fetch(
-    "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=" + apiKey,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [{ parts: [{ text: prompt }] }],
-        generationConfig: { temperature: 0.2, maxOutputTokens: 800 },
-      }),
+  const res = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "Authorization": `Bearer ${apiKey}`,
     },
-  )
+    body: JSON.stringify({
+      model: "openai/gpt-4o-mini",
+      messages: [
+        { role: "system", content: systemPrompt },
+        { role: "user", content: userPrompt },
+      ],
+      temperature: 0.2,
+      max_tokens: 800,
+    }),
+  })
 
   if (!res.ok) {
     const err = await res.text()
-    throw new Error("Gemini error: " + err)
+    throw new Error("OpenRouter error: " + err)
   }
 
   const data = await res.json()
-  const text = data?.candidates?.[0]?.content?.parts?.[0]?.text || ""
+  const text = data?.choices?.[0]?.message?.content || ""
   const cleaned = text.replace(/```json\s*/i, "").replace(/```/g, "").trim()
-
   const parsed = JSON.parse(cleaned)
+
   return {
     summary: parsed.summary || "",
     detected_skills: parsed.detected_skills || [],
@@ -94,9 +80,8 @@ export default {
     if (extractedText.length < 20) {
       return Response.json({
         error: "No se pudo extraer texto del PDF",
-        extracted_text: extractedText,
-        summary: "No se pudo analizar el CV automáticamente.",
         detected_skills: [],
+        summary: "No se pudo analizar el CV automáticamente.",
         detected_experience: "",
         compatible_roles: [],
         compatible_sectors: [],
@@ -105,18 +90,17 @@ export default {
     }
 
     try {
-      const result = await analyzeWithGemini(extractedText)
+      const result = await analyzeWithOpenRouter(extractedText)
       return Response.json({ extracted_text: extractedText, ...result })
     } catch (err) {
       return Response.json({
         error: err instanceof Error ? err.message : "Error de análisis",
-        extracted_text: extractedText,
-        summary: "Análisis automático no disponible. CV subido correctamente.",
         detected_skills: ["CV subido"],
+        summary: "CV subido correctamente.",
         detected_experience: "",
         compatible_roles: [],
         compatible_sectors: [],
-        recommendations: ["El análisis con IA no está disponible. Puedes continuar con el agente."],
+        recommendations: ["El análisis con IA no está disponible temporalmente."],
       })
     }
   }),
