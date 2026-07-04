@@ -5,8 +5,8 @@ import { generateUniqueHash } from '@/lib/utils'
 import type { ParsedInstruction, JobOffer } from '@/types'
 
 function getSupabase() {
-  if (typeof window === 'undefined') return null as any
-  return createClient()
+  if (typeof window === 'undefined') return null
+  try { return createClient() } catch { return null }
 }
 
 interface EdgeJobOffer {
