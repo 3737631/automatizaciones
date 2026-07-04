@@ -5,6 +5,7 @@ on:
     branches: [master]
     paths:
       - 'autocandidatura-ai/**'
+      - '.github/workflows/deploy-autocandidatura.yml'
 
 permissions:
   contents: read
