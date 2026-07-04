@@ -59,33 +59,39 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
 
     try {
       const sessionToken = localStorage.getItem('autocandidatura_session_token');
-      const formData = new FormData();
-      formData.append('file', file);
+      if (!sessionToken) {
+        throw new Error('Sesión no encontrada. Vuelve a conectar tu correo.');
+      }
 
       let analysis: CVAnalysisResult | null = null;
 
-      const res = await fetch('/api/cv/upload', {
-        method: 'POST',
-        headers: sessionToken ? { 'x-session-token': sessionToken } : {},
-        body: formData,
-      });
+      // Try API route first (works on Vercel)
+      try {
+        const formData = new FormData();
+        formData.append('file', file);
 
-      if (res.ok) {
+        const res = await fetch('/api/cv/upload', {
+          method: 'POST',
+          headers: { 'x-session-token': sessionToken },
+          body: formData,
+        });
+
         const json = await res.json();
-        if (json.success && json.data) {
+        if (res.ok && json.success && json.data) {
           analysis = json.data;
+        } else if (!res.ok) {
+          // If API fails (405, 404, etc.), fall through to client upload
+          console.warn('API upload failed, falling back to client upload:', json.error);
         }
+      } catch {
+        // Network error, fall through to client upload
       }
 
-      // If not ok, it could be 405 (static export) or network error
+      // Fallback: upload directly from client to Supabase
       if (!analysis) {
-        if (sessionToken) {
-          const clientResult = await uploadCVFromClient(file, sessionToken);
-          if (!clientResult.success) {
-            throw new Error(clientResult.error || 'Error al subir el CV.');
-          }
-        } else {
-          throw new Error('Sesión no encontrada. Vuelve a conectar tu correo.');
+        const clientResult = await uploadCVFromClient(file, sessionToken);
+        if (!clientResult.success) {
+          throw new Error(clientResult.error || 'Error al subir el CV.');
         }
       }
 

@@ -36,7 +36,10 @@ export async function uploadCVFromClient(
       });
 
     if (uploadError) {
-      return { success: false, error: 'Error al guardar el archivo. Intenta de nuevo.' };
+      if (uploadError.message?.includes('policy')) {
+        return { success: false, error: 'Error de permisos. Asegúrate de que el bucket "cvs" existe y el archivo no está duplicado.' };
+      }
+      return { success: false, error: `Error al guardar el archivo: ${uploadError.message}` };
     }
 
     const { data: urlData } = supabase.storage.from('cvs').getPublicUrl(uploadData.path);
@@ -59,7 +62,8 @@ export async function uploadCVFromClient(
     }
 
     return { success: true };
-  } catch {
-    return { success: false, error: 'Error de conexión. Intenta de nuevo.' };
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Error de conexión';
+    return { success: false, error: message };
   }
 }

@@ -4,6 +4,8 @@ import { parseCVBuffer } from '@/lib/cv/parser';
 import { uploadCV } from '@/lib/cv/storage';
 import { analyzeCV } from '@/lib/ai/analyze-cv';
 
+const MAX_FILE_SIZE = 5 * 1024 * 1024;
+
 export async function POST(req: NextRequest) {
   try {
     const sessionToken = req.headers.get('x-session-token');
@@ -12,6 +14,7 @@ export async function POST(req: NextRequest) {
     }
 
     const supabase = createAdminClient();
+
     const { data: session, error: sessionError } = await supabase
       .from('sessions')
       .select('id')
@@ -22,19 +25,33 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Sesión no válida. Vuelve a conectar tu correo.' }, { status: 401 });
     }
 
-    const formData = await req.formData();
+    let formData: FormData;
+    try {
+      formData = await req.formData();
+    } catch {
+      return NextResponse.json({ error: 'Error al leer el formulario. Envía FormData válido.' }, { status: 400 });
+    }
+
     const file = formData.get('file');
 
-    if (!file || !(file instanceof File)) {
+    if (!file) {
       return NextResponse.json({ error: 'No se recibió ningún archivo. Selecciona un PDF.' }, { status: 400 });
+    }
+
+    if (!(file instanceof File)) {
+      return NextResponse.json({ error: 'El campo "file" debe ser un archivo.' }, { status: 400 });
+    }
+
+    if (file.size === 0) {
+      return NextResponse.json({ error: 'El archivo está vacío.' }, { status: 400 });
     }
 
     if (file.type !== 'application/pdf') {
       return NextResponse.json({ error: 'El archivo debe ser un PDF.' }, { status: 400 });
     }
 
-    if (file.size > 10 * 1024 * 1024) {
-      return NextResponse.json({ error: 'El archivo no puede superar los 10 MB.' }, { status: 400 });
+    if (file.size > MAX_FILE_SIZE) {
+      return NextResponse.json({ error: 'El archivo no puede superar los 5 MB.' }, { status: 400 });
     }
 
     const buffer = Buffer.from(await file.arrayBuffer());
@@ -67,7 +84,8 @@ export async function POST(req: NextRequest) {
     try {
       fileUrl = await uploadCV(session.id, buffer, file.name);
     } catch (error) {
-      return NextResponse.json({ error: 'Error al guardar el archivo. Intenta de nuevo.' }, { status: 500 });
+      const message = error instanceof Error ? error.message : 'Error al guardar el archivo';
+      return NextResponse.json({ error: message }, { status: 500 });
     }
 
     const { error: insertError } = await supabase.from('cvs').insert({
@@ -93,4 +111,8 @@ export async function POST(req: NextRequest) {
   } catch {
     return NextResponse.json({ error: 'Error interno del servidor.' }, { status: 500 });
   }
+}
+
+export async function GET() {
+  return NextResponse.json({ error: 'Método no permitido. Usa POST.' }, { status: 405 });
 }
