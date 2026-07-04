@@ -210,6 +210,21 @@ function AgentRunningInner() {
           onStop={handleStop}
           onChangeInstructions={handleChangeInstructions}
         />
+
+        {status === 'paused' && localStorage.getItem('autocandidatura_review_offers') && (
+          <div className="mt-4 bg-blue-50 border border-blue-200 rounded-xl p-4 flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium text-blue-800">Ofertas listas para revisar</p>
+              <p className="text-xs text-blue-600">Personaliza los mensajes antes de enviar</p>
+            </div>
+            <button
+              onClick={() => router.push('/agent/review')}
+              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg text-sm font-medium hover:bg-blue-700"
+            >
+              Revisar ofertas
+            </button>
+          </div>
+        )}
       </div>
     </div>
   );

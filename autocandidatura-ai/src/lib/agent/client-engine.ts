@@ -304,23 +304,44 @@ export async function startAgentClient(
     onProgress?.(step6.step_name, 'error');
   }
 
-  // Phase 7: Send applications
+  // Phase 7: Save to review (pause for user approval)
   const step7 = stepRecords[6];
-  await updateStep(supabase, step7.id, 'processing');
-  onProgress?.(step7.step_name, 'processing');
+  await updateStep(supabase, step7.id, 'completed', `${messagesGenerated.length} candidaturas listas para revisar`);
+  onProgress?.(step7.step_name, 'completed', `${messagesGenerated.length} candidaturas listas para revisar`);
 
-  for (const item of messagesGenerated) {
-    if (!item.subject || !item.message) continue;
+  // Phase 8: Pause for review
+  const step8 = stepRecords[7];
+  await updateStep(supabase, step8.id, 'completed', 'Esperando revisión del usuario');
+  onProgress?.(step8.step_name, 'completed', 'Esperando revisión del usuario');
 
+  await supabase.from('agent_runs').update({
+    status: 'paused',
+    total_offers_found: totalOffersFound,
+    total_errors: totalErrors,
+  }).eq('id', runId);
+
+  // Save to localStorage for review page
+  localStorage.setItem('autocandidatura_review_offers', JSON.stringify(messagesGenerated));
+  localStorage.setItem('autocandidatura_review_session_id', sessionId);
+  localStorage.setItem('autocandidatura_review_run_id', runId);
+}
+
+export async function sendSelectedOffers(selected: Array<{
+  offer: Partial<JobOffer>; score: number; reason: string; subject: string; message: string;
+}>, sessionId: string, runId: string): Promise<{ sent: number; errors: number }> {
+  const supabase = createClient();
+  let sent = 0;
+  let errors = 0;
+
+  for (const item of selected) {
+    if (!item.subject || !item.message || !item.offer.application_email) continue;
     try {
-      await sendMockEmail(item.offer.application_email!, item.subject, item.message);
-
+      await sendMockEmail(item.offer.application_email, item.subject, item.message);
       const hash = item.offer.unique_hash || generateUniqueHash({
         title: item.offer.title || '',
         company: item.offer.company || '',
         description: item.offer.description,
       });
-
       const { data: savedOffer } = await supabase.from('job_offers').insert({
         session_id: sessionId,
         title: item.offer.title || '',
@@ -347,29 +368,23 @@ export async function startAgentClient(
           status: 'sent',
           sent_at: new Date().toISOString(),
         });
-        totalApplicationsSent++;
+        sent++;
       }
     } catch {
-      totalErrors++;
+      errors++;
     }
   }
-
-  await updateStep(supabase, step7.id, 'completed', `${totalApplicationsSent} candidaturas enviadas`);
-  onProgress?.(step7.step_name, 'completed', `${totalApplicationsSent} candidaturas enviadas`);
-
-  // Phase 8: Save results
-  const step8 = stepRecords[7];
-  await updateStep(supabase, step8.id, 'processing');
-  onProgress?.(step8.step_name, 'processing');
 
   await supabase.from('agent_runs').update({
     status: 'completed',
     finished_at: new Date().toISOString(),
-    total_offers_found: totalOffersFound,
-    total_applications_sent: totalApplicationsSent,
-    total_errors: totalErrors,
+    total_applications_sent: sent,
+    total_errors: errors,
   }).eq('id', runId);
 
-  await updateStep(supabase, step8.id, 'completed', `Completado. ${totalApplicationsSent} candidaturas enviadas`);
-  onProgress?.(step8.step_name, 'completed', `${totalApplicationsSent} candidaturas enviadas`);
+  localStorage.removeItem('autocandidatura_review_offers');
+  localStorage.removeItem('autocandidatura_review_session_id');
+  localStorage.removeItem('autocandidatura_review_run_id');
+
+  return { sent, errors };
 }
