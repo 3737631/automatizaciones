@@ -102,7 +102,7 @@ export default function PrivacyPage() {
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
       if (token) {
-        const supabase = createClient(token);
+        const supabase = createClient();
         await supabase.from('sessions').update({ connected_email: null }).eq('session_token', token);
       }
       localStorage.removeItem('autocandidatura_connected_email');
@@ -133,7 +133,7 @@ export default function PrivacyPage() {
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
       if (token) {
-        const supabase = createClient(token);
+        const supabase = createClient();
         const { data: session } = await supabase
           .from('sessions')
           .select('id')
@@ -157,7 +157,7 @@ export default function PrivacyPage() {
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
       if (token) {
-        const supabase = createClient(token);
+        const supabase = createClient();
         const { data: session } = await supabase
           .from('sessions')
           .select('id')

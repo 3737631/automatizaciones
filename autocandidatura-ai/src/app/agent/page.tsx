@@ -54,7 +54,7 @@ export default function AgentPage() {
 
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
-      const supabase = createClient(token || undefined);
+      const supabase = createClient();
 
       const { data: sessionData } = await supabase
         .from('sessions')

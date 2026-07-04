@@ -22,7 +22,7 @@ export default function HistoryPage() {
     setFetchError('');
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
-      const supabase = createClient(token || undefined);
+      const supabase = createClient();
 
       const { data, error } = await supabase
         .from('agent_runs')

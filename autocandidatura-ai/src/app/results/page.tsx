@@ -39,7 +39,7 @@ function ResultsInner() {
     setFetchError('');
     try {
       const token = localStorage.getItem('autocandidatura_session_token');
-      const supabase = createClient(token || undefined);
+      const supabase = createClient();
 
       const [applicationsRes, offersRes] = await Promise.all([
         supabase.from('applications').select('*').order('created_at', { ascending: false }),
