@@ -72,8 +72,7 @@ function generateMockOffers(criteria: ParsedInstruction): Partial<JobOffer>[] {
 export async function searchOffers(
   criteria: ParsedInstruction
 ): Promise<Partial<JobOffer>[]> {
-  // Simulate network delay
-  await new Promise((resolve) => setTimeout(resolve, 1500));
+  await new Promise((resolve) => setTimeout(resolve, 300));
   return generateMockOffers(criteria);
 }
 

@@ -76,11 +76,24 @@ export async function startAgentClient(
 
   const sessionId = session.id;
 
-  const { data: stepRecords } = await supabase
+  let { data: stepRecords } = await supabase
     .from('agent_steps')
     .select('*')
     .eq('agent_run_id', runId)
     .order('created_at', { ascending: true });
+
+  if (!stepRecords || stepRecords.length === 0) {
+    const created: { id: string; step_name: string }[] = [];
+    for (const stepName of STEP_NAMES) {
+      const { data: step } = await supabase.from('agent_steps').insert({
+        agent_run_id: runId,
+        step_name: stepName,
+        status: 'pending',
+      }).select().single();
+      if (step) created.push({ id: step.id, step_name: step.step_name });
+    }
+    stepRecords = created;
+  }
 
   if (!stepRecords || stepRecords.length === 0) return;
 

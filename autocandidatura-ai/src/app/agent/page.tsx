@@ -95,8 +95,8 @@ export default function AgentPage() {
       if (runError) throw runError;
 
       localStorage.removeItem('autocandidatura_cv_analysis');
-      router.push(`/agent/running?id=${runData.id}&token=${encodeURIComponent(token || '')}`);
       startAgentClient(token || '', instructionData.id, runData.id).catch(console.error);
+      router.push(`/agent/running?id=${runData.id}`);
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Error al activar el agente');
     } finally {
