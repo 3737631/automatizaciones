@@ -1,8 +1,7 @@
 import { createClient } from '@/lib/supabase/client';
-import { searchOffers } from '@/lib/offers/search';
+import { searchOffersReal, generateMessageReal, sendApplicationReal } from '@/lib/agent/edge-client';
 import { validateOfferForAgent } from '@/lib/offers/validator';
 import { generateUniqueHash } from '@/lib/utils';
-import { sendMockEmail } from '@/lib/gmail/service';
 import type {
   AgentRun, AgentStep, ParsedInstruction, CVAnalysisResult, JobOffer, StepStatus,
 } from '@/types';
@@ -38,18 +37,18 @@ function parseInstruction(raw: string): ParsedInstruction {
   };
 }
 
-function generateMessage(
-  profile: { summary: string; skills: string[] },
+async function generateMessage(
+  profile: { summary: string; skills: string[]; experience: string },
   offer: Partial<JobOffer>,
-): { subject: string; message: string } {
-  const skillsText = profile.skills.slice(0, 5).join(', ');
-  return {
-    subject: `Candidatura para ${offer.title} en ${offer.company}`,
-    message: `Me presento como candidato para el puesto de ${offer.title} en ${offer.company}.\n\n` +
-      `Mi perfil: ${profile.summary || 'Profesional con experiencia en el sector.'}\n\n` +
-      `Habilidades: ${skillsText || 'Diversas competencias profesionales.'}\n\n` +
-      `Quedo a la espera de su respuesta para ampliar mi información.\n\nAtentamente,\n[Tu nombre]`,
-  };
+): Promise<{ subject: string; message: string }> {
+  return generateMessageReal(
+    profile.summary || '',
+    profile.skills || [],
+    profile.experience || '',
+    offer.title || '',
+    offer.company || '',
+    offer.description || null,
+  );
 }
 
 interface StepRecord { id: string; step_name: string }
@@ -175,7 +174,7 @@ export async function startAgentClient(
   await updateStep(supabase, step3.id, 'processing');
   onProgress?.(step3.step_name, 'processing');
   try {
-    offers = await searchOffers(criteria);
+    offers = await searchOffersReal(criteria);
     totalOffersFound = offers.length;
     await updateStep(supabase, step3.id, 'completed', `Se encontraron ${offers.length} ofertas`);
     onProgress?.(step3.step_name, 'completed', `Se encontraron ${offers.length} ofertas`);
@@ -290,8 +289,8 @@ export async function startAgentClient(
     for (const item of dailyOffers) {
       if (!item.offer.application_email?.trim()) continue;
 
-      const generated = generateMessage(
-        { summary: cvResult?.summary || '', skills: cvResult?.detected_skills || [] },
+      const generated = await generateMessage(
+        { summary: cvResult?.summary || '', skills: cvResult?.detected_skills || [], experience: cvResult?.detected_experience || '' },
         item.offer,
       );
       messagesGenerated.push({ ...item, ...generated });
@@ -336,7 +335,14 @@ export async function sendSelectedOffers(selected: Array<{
   for (const item of selected) {
     if (!item.subject || !item.message || !item.offer.application_email) continue;
     try {
-      await sendMockEmail(item.offer.application_email, item.subject, item.message);
+      const sessionData = await supabase
+        .from('sessions')
+        .select('gmail_access_token_encrypted, gmail_refresh_token_encrypted')
+        .eq('id', sessionId)
+        .single();
+      const gmailAccessToken = (sessionData?.data as any)?.gmail_access_token_encrypted || '';
+      const gmailRefreshToken = (sessionData?.data as any)?.gmail_refresh_token_encrypted || '';
+      await sendApplicationReal(item.offer.application_email, item.subject, item.message, gmailAccessToken, gmailRefreshToken);
       const hash = item.offer.unique_hash || generateUniqueHash({
         title: item.offer.title || '',
         company: item.offer.company || '',
