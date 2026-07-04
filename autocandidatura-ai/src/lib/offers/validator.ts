@@ -18,8 +18,8 @@ export async function validateOfferForAgent(
     title: string;
     company: string;
     description: string | null;
-    applicationEmail: string | null;
-    applicationUrl: string | null;
+    application_email: string | null;
+    application_url: string | null;
     city: string | null;
     work_mode: string | null;
     unique_hash: string;
@@ -40,9 +40,9 @@ export async function validateOfferForAgent(
 
   // Must have application email or URL
   const hasEmail =
-    offer.applicationEmail && offer.applicationEmail.trim().length > 0;
+    offer.application_email && offer.application_email.trim().length > 0;
   const hasUrl =
-    offer.applicationUrl && offer.applicationUrl.trim().length > 0;
+    offer.application_url && offer.application_url.trim().length > 0;
   if (!hasEmail && !hasUrl) {
     return {
       valid: false,

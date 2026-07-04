@@ -10,9 +10,10 @@ interface AgentPromptBoxProps {
 }
 
 const examples = [
-  'Busca trabajo de frontend remoto',
-  'Busca ofertas de camarero en Málaga',
-  'Busca desarrollador web con React',
+  'Busca trabajo de programador junior en Sevilla',
+  'Busca ofertas remotas de frontend con React',
+  'Encuentra empresas que busquen desarrollador web y envía mi CV',
+  'Busca ofertas de camarero en Málaga y aplica solo a las que tengan email',
 ];
 
 export default function AgentPromptBox({ onSubmit, disabled }: AgentPromptBoxProps) {
@@ -30,7 +31,7 @@ export default function AgentPromptBox({ onSubmit, disabled }: AgentPromptBoxPro
         <textarea
           value={text}
           onChange={(e) => setText(e.target.value)}
-          placeholder="Describe qué trabajo buscas... Ej: Busca ofertas de programador junior en Sevilla o remoto"
+          placeholder="Describe qué trabajo buscas... Ej: Busca trabajo de programador junior en Sevilla o remoto"
           className={cn(
             'w-full min-h-[100px] resize-none rounded-lg border border-gray-300 p-4 pr-12 text-sm outline-none transition-colors',
             'focus:border-blue-400 focus:ring-2 focus:ring-blue-100',
