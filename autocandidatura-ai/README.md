@@ -92,3 +92,5 @@ src/
 - Compatibilidad mínima configurable
 - Todo queda registrado en el historial
 - Se puede pausar, reanudar o detener en cualquier momento
+
+
