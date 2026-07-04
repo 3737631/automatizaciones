@@ -18,7 +18,7 @@ const STEP_NAMES = [
 ];
 
 function parseInstruction(raw: string): ParsedInstruction {
-  const lower = raw.toLowerCase();
+  const lower = raw.toLowerCase().trim();
   const roleMatch = raw.match(/(?:busco|quiero|necesito|encuentra|busca)\s+(?:trabajo\s+)?(?:de\s+|como\s+)?(.+?)(?:en\s+|para|\.|$)/i);
   const cityMatch = raw.match(/(?:en|para)\s+([A-Za-zÁÉÍÓÚáéíóúñÑ\s]+?)(?:\s*(?:,\s*|\s+y\s+|\s+remoto|\s+presencial|\s+hibrido|\.|$))/i);
   const modeMatch = raw.match(/\b(remoto|presencial|hibrido|híbrido)\b/i);
@@ -26,8 +26,14 @@ function parseInstruction(raw: string): ParsedInstruction {
   const skills = ['Node.js', 'TypeScript', 'React', 'Python', 'Comunicación', 'Trabajo en equipo'];
   const sectorMatch = raw.match(/(?:sector\s+|de\s+)(.+?)(?:\s+en|\s+para|\.|$)/i);
 
+  let desired_role = roleMatch?.[1]?.trim() || '';
+
+  if (!desired_role && lower.length > 0 && lower.length < 100) {
+    desired_role = lower.replace(/^(?:de|como|trabajo\s+)\s*/i, '').trim();
+  }
+
   return {
-    desired_role: roleMatch?.[1]?.trim() || '',
+    desired_role,
     sector: sectorMatch?.[1]?.trim(),
     city: cityMatch?.[1]?.trim(),
     work_mode: modeMatch?.[1]?.toLowerCase().replace('híbrido', 'hibrido'),
@@ -244,11 +250,12 @@ export async function startAgentClient(
     const reasons: string[] = [];
 
     if (criteria.desired_role && offer.title) {
-      const roleWords = criteria.desired_role.toLowerCase().split(' ');
-      const titleLower = offer.title.toLowerCase();
-      const matchCount = roleWords.filter((w) => titleLower.includes(w)).length;
+      const normalize = (s: string) => s.toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g, '');
+      const roleWords = normalize(criteria.desired_role).split(' ');
+      const titleLower = normalize(offer.title);
+      const matchCount = roleWords.filter((w) => w.length > 2 && titleLower.includes(w)).length;
       if (matchCount > 0) {
-        score += Math.min(matchCount * 10, 20);
+        score += Math.min(matchCount * 15, 30);
         reasons.push('Coincide con el rol deseado');
       }
     }

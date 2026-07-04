@@ -84,16 +84,21 @@ async function searchAdzuna(criteria: SearchCriteria): Promise<JobOffer[]> {
 }
 
 const MOCK_OFFERS: JobOffer[] = [
-  { title: "Desarrollador Full Stack", company: "TechCorp Spain", city: "Madrid", work_mode: "hibrido", description: "Buscamos desarrollador full stack con experiencia en React y Node.js para unirse a nuestro equipo.", application_email: "rrhh@techcorp.es", url: null, source: "mock" },
-  { title: "Frontend Developer React", company: "DigitalWave", city: "Barcelona", work_mode: "remoto", description: "Únete al equipo de frontend para construir interfaces modernas con React, TypeScript y Tailwind.", application_email: "talento@digitalwave.io", url: null, source: "mock" },
-  { title: "Backend Developer Node.js", company: "CloudSys", city: "Valencia", work_mode: "remoto", description: "Desarrollador backend para API REST con Node.js, Express y PostgreSQL.", application_email: "jobs@cloudsys.dev", url: null, source: "mock" },
-  { title: "Ingeniero de Software", company: "InnovaTech", city: "Sevilla", work_mode: "presencial", description: "Ingeniero de software para desarrollo de aplicaciones web y móviles.", application_email: "empleo@innovatech.es", url: null, source: "mock" },
-  { title: "DevOps Engineer", company: "DataFlow", city: "Madrid", work_mode: "remoto", description: "Buscamos ingeniero DevOps con experiencia en Docker, Kubernetes y CI/CD.", application_email: "hr@dataflow.com", url: null, source: "mock" },
-  { title: "React Native Developer", company: "AppStudio", city: "Barcelona", work_mode: "hibrido", description: "Desarrollador de apps móviles con React Native para proyectos internacionales.", application_email: "rrhh@appstudio.cat", url: null, source: "mock" },
-  { title: "Data Scientist", company: "AI Labs", city: "Madrid", work_mode: "remoto", description: "Científico de datos para desarrollar modelos de machine learning y análisis predictivo.", application_email: "careers@ailabs.es", url: null, source: "mock" },
-  { title: "Project Manager IT", company: "GlobalTech", city: "Barcelona", work_mode: "hibrido", description: "Gestor de proyectos tecnológicos con experiencia en metodologías ágiles.", application_email: "jobs@globaltech.eu", url: null, source: "mock" },
-  { title: "Cybersecurity Analyst", company: "SecureNet", city: "Madrid", work_mode: "presencial", description: "Analista de ciberseguridad para proteger infraestructuras críticas.", application_email: "security@securenet.es", url: null, source: "mock" },
-  { title: "QA Engineer", company: "TestPro", city: "Valencia", work_mode: "remoto", description: "Ingeniero de calidad para automatización de pruebas con Selenium y Cypress.", application_email: "qa@testpro.io", url: null, source: "mock" },
+  { title: "Médico de Familia", company: "Hospital Clínico", city: "Madrid", work_mode: "presencial", description: "Buscamos médico de familia para consultas externas. Contrato estable, formación continuada y horario flexible.", application_email: "rrhh@hospitalclinico.es", url: null, source: "mock" },
+  { title: "Enfermero/a de Urgencias", company: "Sanitas", city: "Barcelona", work_mode: "presencial", description: "Precisamos enfermero/a para servicio de urgencias hospitalarias. Experiencia mínima 2 años.", application_email: "talento@sanitas.es", url: null, source: "mock" },
+  { title: "Médico Especialista", company: "Quirón Salud", city: "Madrid", work_mode: "presencial", description: "Incorporamos médico especialista para consultas. Ofrecemos contrato indefinido y desarrollo profesional.", application_email: "empleo@quironsalud.es", url: null, source: "mock" },
+  { title: "Pediatra", company: "HM Hospitales", city: "Valencia", work_mode: "presencial", description: "Buscamos pediatra para unidad de pediatría hospitalaria. Jornada completa.", application_email: "hr@hmhospitales.com", url: null, source: "mock" },
+  { title: "Cardiólogo", company: "Roche", city: "Barcelona", work_mode: "hibrido", description: "Cardiólogo para investigación clínica y consultas. Colaboración con equipos multidisciplinares.", application_email: "careers@roche.es", url: null, source: "mock" },
+  { title: "Abogado Laboralista", company: "Bufete Martínez", city: "Madrid", work_mode: "presencial", description: "Despacho de abogados busca letrado laboralista con experiencia en despidos y negociación colectiva.", application_email: "rrhh@bufetemartinez.es", url: null, source: "mock" },
+  { title: "Profesor de Secundaria", company: "Colegio Estudio", city: "Madrid", work_mode: "presencial", description: "Profesor para ESO y Bachillerato. Titulación requerida y experiencia docente.", application_email: "jobs@colegioestudio.es", url: null, source: "mock" },
+  { title: "Enfermero/a de Quirófano", company: "Mutua Madrileña", city: "Madrid", work_mode: "presencial", description: "Enfermero/a especializado en quirófano para centro hospitalario en Madrid.", application_email: "rrhh@mutuamadrilena.es", url: null, source: "mock" },
+  { title: "Comercial Sector Farmacéutico", company: "Mapfre", city: "Barcelona", work_mode: "hibrido", description: "Comercial con experiencia en visita médica para representar nuestro portfolio.", application_email: "talento@mapfre.com", url: null, source: "mock" },
+  { title: "Administrativo Hospitalario", company: "Hospital Clínico", city: "Valencia", work_mode: "presencial", description: "Administrativo para gestión de historias clínicas y admisión de pacientes.", application_email: "rrhh@hospitalclinico.es", url: null, source: "mock" },
+  { title: "Médico de Urgencias", company: "Sanitas", city: "Sevilla", work_mode: "presencial", description: "Médico para servicio de urgencias 24h. Contrato con turnos rotativos.", application_email: "empleo@sanitas.es", url: null, source: "mock" },
+  { title: "Desarrollador Full Stack", company: "TechCorp Spain", city: "Madrid", work_mode: "hibrido", description: "Buscamos desarrollador full stack con experiencia en React y Node.js.", application_email: "rrhh@techcorp.es", url: null, source: "mock" },
+  { title: "Enfermero/a de Atención Primaria", company: "Quirón Salud", city: "Bilbao", work_mode: "presencial", description: "Enfermero/a para centro de atención primaria. Horario de mañanas.", application_email: "rrhh@quironsalud.es", url: null, source: "mock" },
+  { title: "Data Scientist", company: "AI Labs", city: "Madrid", work_mode: "remoto", description: "Científico de datos para desarrollar modelos de machine learning.", application_email: "careers@ailabs.es", url: null, source: "mock" },
+  { title: "Gerocultor/a", company: "Grupo Hospitalario HM", city: "Málaga", work_mode: "presencial", description: "Auxiliar de geriatría para residencia de mayores. Experiencia y formación en geriatría.", application_email: "rrhh@hmhospitales.com", url: null, source: "mock" },
 ]
 
 function getMockOffers(criteria: SearchCriteria): JobOffer[] {
@@ -111,7 +116,7 @@ function getMockOffers(criteria: SearchCriteria): JobOffer[] {
   if (criteria.work_mode) {
     filtered = filtered.filter((o) => o.work_mode?.toLowerCase() === criteria.work_mode.toLowerCase())
   }
-  return filtered.length > 0 ? filtered : MOCK_OFFERS.slice(0, 5)
+  return filtered.length >= 3 ? filtered : MOCK_OFFERS.slice(0, 5)
 }
 
 export default {

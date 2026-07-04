@@ -9,6 +9,14 @@ function getSupabase() {
   try { return createClient() } catch { return null }
 }
 
+async function invokeWithTimeout(fn: () => Promise<any>, ms = 15000): Promise<any> {
+  const result = await Promise.race([
+    fn(),
+    new Promise<never>((_, reject) => setTimeout(() => reject(new Error('timeout')), ms)),
+  ])
+  return result
+}
+
 interface EdgeJobOffer {
   title: string
   company: string
@@ -24,9 +32,11 @@ export async function searchOffersReal(criteria: ParsedInstruction): Promise<Par
   const supabase = getSupabase()
   if (!supabase) return mockSearchOffers(criteria)
   try {
-    const { data, error } = await supabase.functions.invoke('search-offers', {
-      body: { criteria: { desired_role: criteria.desired_role, city: criteria.city, work_mode: criteria.work_mode, sector: criteria.sector, skills: criteria.skills } },
-    })
+    const { data, error } = await invokeWithTimeout(() =>
+      supabase.functions.invoke('search-offers', {
+        body: { criteria: { desired_role: criteria.desired_role, city: criteria.city, work_mode: criteria.work_mode, sector: criteria.sector, skills: criteria.skills } },
+      })
+    )
     if (!error && data?.offers?.length > 0) {
       return data.offers.map((o: EdgeJobOffer) => ({
         id: generateUniqueHash({ title: o.title, company: o.company, description: o.description }),
@@ -70,16 +80,18 @@ export async function generateMessageReal(
     }
   }
   try {
-    const { data, error } = await supabase.functions.invoke('generate-message', {
-      body: {
-        cv_summary: cvSummary,
-        cv_skills: cvSkills,
-        cv_experience: cvExperience,
-        offer_title: offerTitle,
-        offer_company: offerCompany,
-        offer_description: offerDescription,
-      },
-    })
+    const { data, error } = await invokeWithTimeout(() =>
+      supabase.functions.invoke('generate-message', {
+        body: {
+          cv_summary: cvSummary,
+          cv_skills: cvSkills,
+          cv_experience: cvExperience,
+          offer_title: offerTitle,
+          offer_company: offerCompany,
+          offer_description: offerDescription,
+        },
+      })
+    )
     if (!error && data?.subject && data?.message) {
       return { subject: data.subject, message: data.message }
     }
@@ -113,15 +125,11 @@ export async function sendApplicationReal(
   const supabase = getSupabase()
   if (supabase) {
     try {
-      const { data, error } = await supabase.functions.invoke('send-application', {
-      body: {
-        to,
-        subject,
-        message,
-        gmail_access_token: gmailAccessToken,
-        gmail_refresh_token: gmailRefreshToken,
-      },
-    })
+      const { data, error } = await invokeWithTimeout(() =>
+        supabase.functions.invoke('send-application', {
+          body: { to, subject, message, gmail_access_token: gmailAccessToken, gmail_refresh_token: gmailRefreshToken },
+        })
+      )
       if (!error && data?.sent) {
         return true
       }
