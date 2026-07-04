@@ -124,6 +124,27 @@ export default function CVUploadCard({ onUploadComplete }: CVUploadCardProps) {
         };
       }
 
+      setProgress(95);
+      // Save analysis to DB so agent can use it
+      try {
+        const supabase = createClient();
+        const { data: session } = await supabase.from('sessions').select('id').eq('session_token', sessionToken).maybeSingle();
+        if (session) {
+          const { data: existingCv } = await supabase.from('cvs').select('id').eq('session_id', session.id).order('created_at', { ascending: false }).limit(1).maybeSingle();
+          if (existingCv) {
+            await supabase.from('cvs').update({
+              ai_summary: finalResult.summary,
+              detected_skills: finalResult.detected_skills,
+              detected_experience: finalResult.detected_experience,
+              compatible_roles: finalResult.compatible_roles,
+              compatible_sectors: finalResult.compatible_sectors,
+            }).eq('id', existingCv.id);
+          }
+        }
+      } catch {
+        // non-critical
+      }
+
       setProgress(100);
       setResult(finalResult);
       onUploadComplete?.(finalResult);

@@ -55,25 +55,19 @@ export async function validateOfferForAgent(
     return { valid: false, reason: 'Oferta duplicada' };
   }
 
-  // Check city match
+  // City check — warn but don't reject (preferencia, no requisito)
   if (criteria.city && offer.city) {
     const criteriaCity = criteria.city.toLowerCase().trim();
     const offerCity = offer.city.toLowerCase().trim();
     if (!offerCity.includes(criteriaCity) && !criteriaCity.includes(offerCity)) {
-      return {
-        valid: false,
-        reason: `La ciudad no coincide (se busca: ${criteria.city}, oferta: ${offer.city})`,
-      };
+      console.warn(`[validation] Ciudad no coincide: busca="${criteria.city}", oferta="${offer.city}"`)
     }
   }
 
-  // Check work_mode match
+  // Work mode check — warn but don't reject
   if (criteria.work_mode && offer.work_mode) {
     if (offer.work_mode.toLowerCase().trim() !== criteria.work_mode.toLowerCase().trim()) {
-      return {
-        valid: false,
-        reason: `El modo de trabajo no coincide (se busca: ${criteria.work_mode}, oferta: ${offer.work_mode})`,
-      };
+      console.warn(`[validation] Modalidad no coincide: busca="${criteria.work_mode}", oferta="${offer.work_mode}"`)
     }
   }
 

@@ -16,7 +16,7 @@ export async function parseAgentInstruction(
   "country": "país (opcional, string vacío si no se especifica)",
   "work_mode": "presencial | remoto | hibrido (opcional, string vacío si no se especifica)",
   "skills": ["skill1", "skill2"],
-  "minimum_compatibility_score": 60,
+  "minimum_compatibility_score": 30,
   "daily_limit": 10
 }
 
@@ -41,8 +41,8 @@ ${rawInstruction}`;
       skills: parsed.skills || [],
       minimum_compatibility_score:
         typeof parsed.minimum_compatibility_score === 'number'
-          ? parsed.minimum_compatibility_score
-          : 60,
+          ? Math.min(parsed.minimum_compatibility_score, 50)
+          : 30,
       daily_limit:
         typeof parsed.daily_limit === 'number' ? parsed.daily_limit : 10,
     };

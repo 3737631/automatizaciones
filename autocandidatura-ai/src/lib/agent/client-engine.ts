@@ -38,7 +38,7 @@ function parseInstruction(raw: string): ParsedInstruction {
     city: cityMatch?.[1]?.trim(),
     work_mode: modeMatch?.[1]?.toLowerCase().replace('híbrido', 'hibrido'),
     skills,
-    minimum_compatibility_score: 60,
+    minimum_compatibility_score: 30,
     daily_limit: 10,
   };
 }
