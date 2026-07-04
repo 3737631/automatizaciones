@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Mail, CheckCircle, ArrowRight, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { createSessionFromClient } from '@/lib/supabase/create-session';
 
 interface EmailConnectCardProps {
   onConnected?: (email: string) => void;
@@ -15,7 +16,7 @@ export default function EmailConnectCard({ onConnected }: EmailConnectCardProps)
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const handleMockConnect = () => {
+  const handleMockConnect = async () => {
     if (loading) return;
     setError('');
     const trimmed = emailInput.trim();
@@ -29,12 +30,17 @@ export default function EmailConnectCard({ onConnected }: EmailConnectCardProps)
       return;
     }
     setLoading(true);
-    setTimeout(() => {
+    try {
+      const sessionToken = await createSessionFromClient(trimmed, 'mock');
       localStorage.setItem('autocandidatura_connected_email', trimmed);
+      localStorage.setItem('autocandidatura_session_token', sessionToken);
       setConnectedEmail(trimmed);
-      setLoading(false);
       onConnected?.(trimmed);
-    }, 800);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Error al conectar. Intenta de nuevo.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const handleGoogleConnect = () => {
