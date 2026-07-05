@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { sendSelectedOffers } from '@/lib/agent/client-engine';
-import { Send, CheckCircle, AlertCircle, Edit3, Building, Mail, Target } from 'lucide-react';
+import { Send, CheckCircle, AlertCircle, Edit3, Building, Mail, Target, ExternalLink } from 'lucide-react';
 
 interface ReviewOffer {
   offer: {
@@ -11,8 +11,10 @@ interface ReviewOffer {
     company?: string;
     description?: string | null;
     application_email?: string | null;
+    application_url?: string | null;
     city?: string | null;
     work_mode?: string | null;
+    source?: string;
   };
   score: number;
   reason: string;
@@ -148,7 +150,12 @@ export default function ReviewPage() {
                       <span className="flex items-center gap-1"><Building className="w-3 h-3" />{item.offer.company}</span>
                       {item.offer.city && <span>{item.offer.city}</span>}
                       {item.offer.work_mode && <span>{item.offer.work_mode}</span>}
-                      <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{item.offer.application_email}</span>
+                      {item.offer.application_email && <span className="flex items-center gap-1"><Mail className="w-3 h-3" />{item.offer.application_email}</span>}
+                      {item.offer.application_url && (
+                        <a href={item.offer.application_url} target="_blank" rel="noopener noreferrer" className="flex items-center gap-1 text-blue-600 hover:text-blue-800">
+                          <ExternalLink className="w-3 h-3" />Ver oferta
+                        </a>
+                      )}
                     </div>
                     <p className="text-xs text-gray-400 mb-2">{item.reason}</p>
 

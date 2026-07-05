@@ -222,20 +222,12 @@ export async function startAgentClient(
       }
     }
 
-    await updateStep(supabase, step4.id, 'completed', `${validOffers.length} de ${offers.length} ofertas válidas`);
+      await updateStep(supabase, step4.id, 'completed', `${validOffers.length} de ${offers.length} ofertas válidas`);
     onProgress?.(step4.step_name, 'completed', `${validOffers.length} de ${offers.length} ofertas válidas`);
   } catch {
     totalErrors++;
     await updateStep(supabase, step4.id, 'error', 'Error al validar ofertas');
     onProgress?.(step4.step_name, 'error');
-  }
-
-  if (validOffers.length === 0) {
-    await supabase.from('agent_runs').update({
-      status: 'completed', finished_at: new Date().toISOString(),
-      total_offers_found: totalOffersFound, total_applications_sent: 0, total_errors: totalErrors,
-    }).eq('id', runId);
-    return;
   }
 
   // Phase 5: Calculate compatibility
@@ -294,8 +286,6 @@ export async function startAgentClient(
   onProgress?.(step6.step_name, 'processing');
   try {
     for (const item of dailyOffers) {
-      if (!item.offer.application_email?.trim()) continue;
-
       const generated = await generateMessage(
         { summary: cvResult?.summary || '', skills: cvResult?.detected_skills || [], experience: cvResult?.detected_experience || '' },
         item.offer,
@@ -340,7 +330,10 @@ export async function sendSelectedOffers(selected: Array<{
   let errors = 0;
 
   for (const item of selected) {
-    if (!item.subject || !item.message || !item.offer.application_email) continue;
+    if (!item.subject || !item.message || !item.offer.application_email) {
+      errors++;
+      continue;
+    }
     try {
       const sessionData = await supabase
         .from('sessions')
@@ -356,18 +349,12 @@ export async function sendSelectedOffers(selected: Array<{
         description: item.offer.description,
       });
       const { data: savedOffer } = await supabase.from('job_offers').insert({
-        session_id: sessionId,
-        title: item.offer.title || '',
-        company: item.offer.company || '',
-        city: item.offer.city || null,
-        work_mode: item.offer.work_mode || null,
-        source: 'mock',
-        application_email: item.offer.application_email || null,
+        session_id: sessionId, title: item.offer.title || '', company: item.offer.company || '',
+        city: item.offer.city || null, work_mode: item.offer.work_mode || null,
+        source: item.offer.source || 'adzuna', application_email: item.offer.application_email || null,
+        application_url: item.offer.application_url || null,
         description: item.offer.description || null,
-        compatibility_score: item.score,
-        compatibility_reason: item.reason,
-        status: 'applied',
-        unique_hash: hash,
+        compatibility_score: item.score, compatibility_reason: item.reason, status: 'applied', unique_hash: hash,
       }).select().single();
 
       if (savedOffer) {

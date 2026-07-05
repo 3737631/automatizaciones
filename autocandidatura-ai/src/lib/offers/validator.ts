@@ -29,7 +29,6 @@ export async function validateOfferForAgent(
 ): Promise<{ valid: boolean; reason?: string }> {
   if (!offer.title) return { valid: false, reason: 'Sin título' }
   if (!offer.company) return { valid: false, reason: 'Sin empresa' }
-  if (!offer.application_email) return { valid: false, reason: 'Sin email de contacto' }
 
   return { valid: true };
 }
