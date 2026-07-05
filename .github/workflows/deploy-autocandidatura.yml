@@ -62,11 +62,12 @@ jobs:
 
       - name: Deploy functions
         working-directory: ./autocandidatura-ai
+        continue-on-error: true
         run: |
+          supabase functions deploy analyze-cv
           supabase functions deploy search-offers
           supabase functions deploy generate-message
           supabase functions deploy send-application
-          supabase functions deploy analyze-cv
         env:
           SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
